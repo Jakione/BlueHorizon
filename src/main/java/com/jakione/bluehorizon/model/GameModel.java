@@ -12,12 +12,18 @@ public class GameModel {
 
     private boolean isRunning;
 
+    // Riferimento al giocatore
+    private Player player;
+
     /**
      * Costruisce lo stato iniziale del mondo di gioco.
      *
      */
     public GameModel() {
         this.isRunning = false;
+
+        // Facciamo spawnare il giocatore, ad esempio, alle coordinate logiche 100, 100
+        this.player = new Player(100.0, 100.0);
     }
 
     public int getMaxColumns() { return maxColumns; }
@@ -25,4 +31,7 @@ public class GameModel {
 
     public boolean isRunning() { return isRunning; }
     public void setRunning(boolean running) { this.isRunning = running; }
+
+    // Permette agli altri componenti di accedere allo stato del giocatore
+    public Player getPlayer() { return player; }
 }

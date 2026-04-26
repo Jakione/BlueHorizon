@@ -25,7 +25,6 @@ public class GameEngine implements Runnable {
     /**
      * Inizializza il motore agganciandolo al modello dei dati.
      *
-     * @param model Il modello logico da gestire
      */
     public GameEngine(GameModel model) {
         this.model = model;
@@ -80,7 +79,11 @@ public class GameEngine implements Runnable {
      * e gestione probabilità di pesca.
      */
     private void updateLogicalState() {
-        System.out.println("Sistema aggiornato");
+        // Il motore fa aggiornare la posizione al giocatore in base ai tasti premuti
+        model.getPlayer().updatePosition();
+
+        // In futuro qui calcoleremo le collisioni (es. "la barca ha toccato la terraferma?")
+        // o aggiorneremo il meteo.
     }
 
     /**

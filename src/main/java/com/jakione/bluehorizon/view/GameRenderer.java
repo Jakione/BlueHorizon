@@ -2,6 +2,7 @@ package com.jakione.bluehorizon.view;
 
 import com.jakione.bluehorizon.model.GameModel;
 import com.jakione.bluehorizon.model.GameObserver;
+import com.jakione.bluehorizon.model.Player;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -40,9 +41,15 @@ public class GameRenderer extends Canvas implements GameObserver {
     private void render() {
         GraphicsContext gc = this.getGraphicsContext2D();
 
-        // Sfondo nero
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, this.getWidth(), this.getHeight());
+
+        // Recupera i dati logici aggiornati
+        Player player = model.getPlayer();
+
+        // Disegna il giocatore (quadratino bianco) alle coordinate correnti
+        gc.setFill(Color.WHITE);
+        gc.fillRect(player.getX(), player.getY(), tileSize, tileSize);
 
         // Qui in futuro disegneremo la mappa, il mare, la barca...
     }
