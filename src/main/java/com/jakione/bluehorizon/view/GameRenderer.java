@@ -12,7 +12,7 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private final int originalTileSize = 16;
     private final int scale = 3;
-    private final int tileSize = originalTileSize * scale;
+    private final int tileSize = originalTileSize * scale; //48
 
     private final GameModel model;
 

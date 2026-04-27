@@ -1,8 +1,11 @@
 package com.jakione.bluehorizon.controller;
 
 
+import com.jakione.bluehorizon.model.Direction;
 import com.jakione.bluehorizon.model.GameModel;
 import com.jakione.bluehorizon.model.GameObserver;
+
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,8 @@ public class GameEngine implements Runnable {
     private final List<GameObserver> observers;
     private Thread gameThread;
 
+    private static final long MOVE_COOLDOWN_MS = 150; // 250ms di pausa tra una casella e l'altra
+    private long lastMoveTime = 0;
 
 
     // Nelle fasi avanzate, useremo un delta-time per un loop più preciso
@@ -30,6 +35,22 @@ public class GameEngine implements Runnable {
         this.model = model;
         this.observers = new ArrayList<>();
     }
+
+
+    public void handleMovementRequest(Direction direction) {
+        long currentTime = System.currentTimeMillis();
+
+        // Controlliamo se è passato abbastanza tempo dall'ultimo movimento
+        if (currentTime - lastMoveTime >= MOVE_COOLDOWN_MS) {
+
+            // Qui delegherai al Model l'aggiornamento vero e proprio delle coordinate
+            // es. model.movePlayer(dir);
+            model.getPlayer().updatePosition(direction);
+
+            lastMoveTime = currentTime; // Resettiamo il timer
+        }
+    }
+
 
     /**
      * Registra un nuovo observer (tipicamente la View JavaFX).
@@ -66,25 +87,20 @@ public class GameEngine implements Runnable {
 
             // Applichiamo la logica e notifichiamo solo se è passato il tempo necessario
             if (currentTime - lastTime >= drawInterval) {
-                updateLogicalState();
+                // 1. Aggiorna la posizione dei pesci che nuotano
+                // model.updateFishes();
+
+                // 2. Aggiorna il meteo o la durata dei buff/debuff
+                // model.updateEnvironment();
+
+                // 3. Notifica la View che il mondo è cambiato
                 notifyObservers();
+
                 lastTime = currentTime;
             }
         }
     }
 
-    /**
-     * Aggiorna matematicamente il mondo.
-     * Qui inseriremo le valutazioni del meteo, decremento timer dei buff (Decorator)
-     * e gestione probabilità di pesca.
-     */
-    private void updateLogicalState() {
-        // Il motore fa aggiornare la posizione al giocatore in base ai tasti premuti
-        model.getPlayer().updatePosition();
-
-        // In futuro qui calcoleremo le collisioni (es. "la barca ha toccato la terraferma?")
-        // o aggiorneremo il meteo.
-    }
 
     /**
      * Segnala a tutte le viste in ascolto che i dati sono mutati.

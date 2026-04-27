@@ -1,6 +1,7 @@
 package com.jakione.bluehorizon;
 
 import com.jakione.bluehorizon.controller.GameEngine;
+import com.jakione.bluehorizon.model.Direction;
 import com.jakione.bluehorizon.model.GameModel;
 import com.jakione.bluehorizon.view.GameRenderer;
 
@@ -32,24 +33,13 @@ public class App extends Application {
 
         // --- GESTIONE INPUT TASTIERA ---
 
-        // Quando un tasto viene PREMUTO, accendiamo il flag nel Model
-        scene.setOnKeyPressed((KeyEvent event) -> {
+        // In App.java (La tua View)
+        scene.setOnKeyPressed(event -> {
             switch (event.getCode()) {
-                case W -> model.getPlayer().setMovingUp(true);
-                case S -> model.getPlayer().setMovingDown(true);
-                case A -> model.getPlayer().setMovingLeft(true);
-                case D -> model.getPlayer().setMovingRight(true);
-                default -> {} // Ignora altri tasti
-            }
-        });
-
-        // Quando un tasto viene RILASCIATO, spegniamo il flag nel Model
-        scene.setOnKeyReleased((KeyEvent event) -> {
-            switch (event.getCode()) {
-                case W -> model.getPlayer().setMovingUp(false);
-                case S -> model.getPlayer().setMovingDown(false);
-                case A -> model.getPlayer().setMovingLeft(false);
-                case D -> model.getPlayer().setMovingRight(false);
+                case W -> engine.handleMovementRequest(Direction.UP);
+                case S -> engine.handleMovementRequest(Direction.DOWN);
+                case A -> engine.handleMovementRequest(Direction.LEFT);
+                case D -> engine.handleMovementRequest(Direction.RIGHT);
                 default -> {}
             }
         });
