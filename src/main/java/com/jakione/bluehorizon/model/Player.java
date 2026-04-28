@@ -1,46 +1,32 @@
 package com.jakione.bluehorizon.model;
 
 /**
- * Rappresenta l'entità del giocatore (la barca) all'interno del mondo logico.
- * Gestisce la posizione, la velocità e lo stato del movimento.
+ * Rappresenta l'entità del giocatore.
+ * Utilizza coordinate intere per identificare la posizione sulla griglia logica.
  */
 public class Player {
 
-    // Coordinate logiche (non sono pixel fissi a schermo, ma unità di spazio del mondo)
-    private double x;
-    private double y;
+    private int col;
+    private int row;
 
-    // Velocità di spostamento (unità per tick logico)
-    private final double speed;
-
-    /**
-     * Inizializza il giocatore in una posizione di partenza.
-     */
-    public Player(double startX, double startY) {
-        this.x = startX;
-        this.y = startY;
-        this.speed = 48; // Velocità logica di base
+    public Player(int startCol, int startRow) {
+        this.col = startCol;
+        this.row = startRow;
     }
 
     /**
-     * Aggiorna le coordinate del giocatore in base ai flag di movimento attivi.
-     * Questo metodo verrà chiamato unicamente dal GameEngine.
+     * Modifica la posizione logica sulla griglia.
+     * La validazione dei confini viene gestita dal GameModel.
      */
     public void updatePosition(Direction direction) {
-        if (direction == Direction.UP) {
-            y -= speed;
-        }
-        if (direction == Direction.DOWN) {
-            y += speed;
-        }
-        if (direction == Direction.LEFT) {
-            x -= speed;
-        }
-        if (direction == Direction.RIGHT) {
-            x += speed;
+        switch (direction) {
+            case UP -> row--;
+            case DOWN -> row++;
+            case LEFT -> col--;
+            case RIGHT -> col++;
         }
     }
-    // --- GETTER (Per la View che deve sapere dove disegnare la barca) ---
-    public double getX() { return x; }
-    public double getY() { return y; }
+
+    public int getCol() { return col; }
+    public int getRow() { return row; }
 }

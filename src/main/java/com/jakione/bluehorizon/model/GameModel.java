@@ -9,11 +9,11 @@ public class GameModel {
 
     private final int maxColumns = 16;
     private final int maxRows = 12;
-
     private boolean isRunning;
-
-    // Riferimento al giocatore
     private Player player;
+
+    // Struttura dati che rappresenta il mondo di gioco
+    private TileType[][] mapGrid;
 
     /**
      * Costruisce lo stato iniziale del mondo di gioco.
@@ -21,9 +21,35 @@ public class GameModel {
      */
     public GameModel() {
         this.isRunning = false;
+        this.player = new Player(maxColumns/2, maxRows/2); // Facciamo spawnare il giocatore
+        // Inizializziamo la mappa
+        this.mapGrid = new TileType[maxColumns][maxRows];
+        generateWorld();
+    }
 
-        // Facciamo spawnare il giocatore, ad esempio, alle coordinate logiche 100, 100
-        this.player = new Player(100.0, 100.0);
+    private void generateWorld() {
+        for (int col = 0; col < maxColumns; col++) {
+            for (int row = 0; row < maxRows; row++) {
+                mapGrid[col][row] = TileType.WATER;
+            }
+        }
+    }
+
+    /**
+     * Gestisce la logica di movimento
+     */
+    public void movePlayer(Direction direction) {
+        int nextCol = player.getCol();
+        int nextRow = player.getRow();
+
+        switch (direction) {
+            case UP -> nextRow--;
+            case DOWN -> nextRow++;
+            case LEFT -> nextCol--;
+            case RIGHT -> nextCol++;
+        }
+        player.updatePosition(direction);
+
     }
 
     public int getMaxColumns() { return maxColumns; }
@@ -32,6 +58,8 @@ public class GameModel {
     public boolean isRunning() { return isRunning; }
     public void setRunning(boolean running) { this.isRunning = running; }
 
-    // Permette agli altri componenti di accedere allo stato del giocatore
     public Player getPlayer() { return player; }
+
+    // Getter per permettere alla View di leggere la mappa
+    public TileType[][] getMapGrid() { return mapGrid; }
 }

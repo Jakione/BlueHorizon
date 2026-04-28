@@ -43,11 +43,9 @@ public class GameEngine implements Runnable {
         // Controlliamo se è passato abbastanza tempo dall'ultimo movimento
         if (currentTime - lastMoveTime >= MOVE_COOLDOWN_MS) {
 
-            // Qui delegherai al Model l'aggiornamento vero e proprio delle coordinate
-            // es. model.movePlayer(dir);
-            model.getPlayer().updatePosition(direction);
-
-            lastMoveTime = currentTime; // Resettiamo il timer
+            // Chiamata incapsulata: il controller non sa come si muove il player, lo chiede al modello
+            model.movePlayer(direction);
+            lastMoveTime = currentTime;
         }
     }
 
