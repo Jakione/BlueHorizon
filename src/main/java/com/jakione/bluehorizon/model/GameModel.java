@@ -1,5 +1,7 @@
 package com.jakione.bluehorizon.model;
 
+import com.jakione.bluehorizon.persistence.MapReader;
+
 /**
  * Rappresenta lo stato logico di "Blue Horizon".
  * Contiene unicamente i dati di dominio, ignorando qualsiasi dettaglio visivo.
@@ -7,8 +9,8 @@ package com.jakione.bluehorizon.model;
 
 public class GameModel {
 
-    private final int maxColumns = 16;
-    private final int maxRows = 12;
+    private int maxColumns;
+    private int maxRows;
     private boolean isRunning;
     private Player player;
 
@@ -21,16 +23,26 @@ public class GameModel {
      */
     public GameModel() {
         this.isRunning = false;
+
+        generateWorld("/map.txt"); // Il file dovrà trovarsi in src/main/resources/map.txt
         this.player = new Player(maxColumns/2, maxRows/2); // Facciamo spawnare il giocatore
-        // Inizializziamo la mappa
-        this.mapGrid = new TileType[maxColumns][maxRows];
-        generateWorld();
+
     }
 
-    private void generateWorld() {
+    private void generateWorld(String mapFilePath) {
+        // Deleghiamo la lettura grezza al modulo di persistenza
+        int[][] rawMap = MapReader.loadMapMatrix(mapFilePath);
+
+        // Estrapoliamo le dimensioni reali generate dal reader
+        this.maxColumns = rawMap.length;
+        this.maxRows = rawMap[0].length;
+
+        this.mapGrid = new TileType[maxColumns][maxRows];
+
+        // Traduzione dei dati grezzi negli Enum di dominio
         for (int col = 0; col < maxColumns; col++) {
             for (int row = 0; row < maxRows; row++) {
-                mapGrid[col][row] = TileType.WATER;
+                mapGrid[col][row] = TileType.fromId(rawMap[col][row]);
             }
         }
     }
@@ -48,8 +60,12 @@ public class GameModel {
             case LEFT -> nextCol--;
             case RIGHT -> nextCol++;
         }
-        player.updatePosition(direction);
-
+        if (nextCol >= 0 && nextCol < maxColumns && nextRow >= 0 && nextRow < maxRows) {
+            TileType destinationTile = mapGrid[nextCol][nextRow];
+            if (destinationTile == TileType.WATER) {
+                player.updatePosition(direction);
+            }
+        }
     }
 
     public int getMaxColumns() { return maxColumns; }

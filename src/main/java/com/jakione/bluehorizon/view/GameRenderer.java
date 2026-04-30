@@ -8,6 +8,9 @@ import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
 public class GameRenderer extends Canvas implements GameObserver {
@@ -50,11 +53,21 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private void loadAssets() {
         try {
-            waterTexture1 = new Image(getClass().getResourceAsStream("/Tile/watertile1.png"));
-            waterTexture2 = new Image(getClass().getResourceAsStream("/Tile/watertile2.png"));
-            playerImage = new Image(getClass().getResourceAsStream("/Fisherman/south.png"));
+            // 1. Carichiamo gli asset originali (piccoli)
+            Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/watertile1.png"));
+            Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/watertile2.png"));
+            Image originalPlayer = new Image(getClass().getResourceAsStream("/Player/P2down (1).png"));
+
+            // 2. Ingrandiamo gli asset alla dimensione `tileSize` finale mantenendo la nitidezza (scale = 3)
+            waterTexture1 = scalePixelArt(originalWater1, scale);
+            waterTexture2 = scalePixelArt(originalWater2, scale);
+            playerImage = scalePixelArt(originalPlayer, scale);
+
+            // In questo modo, waterTexture1, 2 e playerImage sono GIA grandi 48x48
+            // e GIA nitide come pixel-art.
+
         } catch (Exception e) {
-            System.err.println("Attenzione: Impossibile caricare water_1.png o water_2.png.");
+            System.err.println("Attenzione: Impossibile caricare water_1.png, water_2.png o south.png.");
         }
     }
 
@@ -67,17 +80,35 @@ public class GameRenderer extends Canvas implements GameObserver {
     private void render() {
         GraphicsContext gc = this.getGraphicsContext2D();
 
-        // Pulizia dello schermo (il colore di sfondo fa da "vuoto" fuori dalla mappa)
+        // Pulizia dello schermo
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, this.getWidth(), this.getHeight());
 
         TileType[][] map = model.getMapGrid();
         Player player = model.getPlayer();
 
-        // 1. CALCOLO DELLA TELECAMERA FLUIDA
-        // Il target della telecamera è la posizione assoluta del giocatore nel mondo
-        double targetCameraX = player.getCol() * tileSize;
-        double targetCameraY = player.getRow() * tileSize;
+        // --- 1. CALCOLO DELLE COORDINATE DEL MONDO E LIMITI ---
+        double playerWorldX = player.getCol() * tileSize;
+        double playerWorldY = player.getRow() * tileSize;
+
+        double screenWidth = this.getWidth();
+        double screenHeight = this.getHeight();
+
+        double mapPixelWidth = model.getMaxColumns() * tileSize;
+        double mapPixelHeight = model.getMaxRows() * tileSize;
+
+        // --- 2. CALCOLO DELLA TELECAMERA IDEALE (Angolo in alto a sx) ---
+        // Vogliamo centrare il giocatore, quindi la telecamera deve stare mezza schermata in alto a sinistra rispetto a lui
+        double idealCameraX = playerWorldX - (screenWidth / 2.0) + (tileSize / 2.0);
+        double idealCameraY = playerWorldY - (screenHeight / 2.0) + (tileSize / 2.0);
+
+        // --- 3. CLAMPING (Vincolo ai bordi) ---
+        // Non permettiamo alla telecamera di andare sotto lo 0 o oltre la dimensione massima della mappa
+        double maxCameraX = Math.max(0, mapPixelWidth - screenWidth);
+        double maxCameraY = Math.max(0, mapPixelHeight - screenHeight);
+
+        double targetCameraX = Math.max(0, Math.min(idealCameraX, maxCameraX));
+        double targetCameraY = Math.max(0, Math.min(idealCameraY, maxCameraY));
 
         // Allineamento istantaneo al primissimo frame
         if (cameraX == -1 && cameraY == -1) {
@@ -85,13 +116,9 @@ public class GameRenderer extends Canvas implements GameObserver {
             cameraY = targetCameraY;
         }
 
-        // Movimento fluido della telecamera
+        // Movimento fluido della telecamera verso il target bloccato
         cameraX += (targetCameraX - cameraX) * SMOOTHING_FACTOR;
         cameraY += (targetCameraY - cameraY) * SMOOTHING_FACTOR;
-
-        // Calcolo del centro dello schermo (offset per centrare la vista)
-        double screenCenterX = (this.getWidth() / 2.0) - (tileSize / 2.0);
-        double screenCenterY = (this.getHeight() / 2.0) - (tileSize / 2.0);
 
         // --- GESTIONE TEXTURE ACQUA ---
         int frameIndex = (waterFrameCounter / animationSpeed) % 2;
@@ -99,37 +126,72 @@ public class GameRenderer extends Canvas implements GameObserver {
                 ? ((frameIndex == 0) ? waterTexture1 : waterTexture2)
                 : waterTexture1;
 
-        // 2. RENDER DELLA MAPPA (Traslata in base alla telecamera)
+        // --- 4. RENDER DELLA MAPPA ---
         for (int col = 0; col < model.getMaxColumns(); col++) {
             for (int row = 0; row < model.getMaxRows(); row++) {
 
-                // Formula Magica: Posizione nel mondo - Posizione Telecamera + Metà Schermo
-                double drawX = (col * tileSize) - cameraX + screenCenterX;
-                double drawY = (row * tileSize) - cameraY + screenCenterY;
+                // Ora la formula è semplicissima: Posizione nel mondo - Posizione Telecamera
+                double drawX = (col * tileSize) - cameraX;
+                double drawY = (row * tileSize) - cameraY;
 
-                // Ottimizzazione: Disegniamo il tile SOLO se è visibile a schermo! (Culling)
-                if (drawX + tileSize > 0 && drawX < this.getWidth() &&
-                        drawY + tileSize > 0 && drawY < this.getHeight()) {
+                // Culling: Disegna solo se visibile
+                if (drawX + tileSize > 0 && drawX < screenWidth &&
+                        drawY + tileSize > 0 && drawY < screenHeight) {
 
                     if (map[col][row] == TileType.WATER) {
                         if (currentWaterImage != null) {
-                            gc.drawImage(currentWaterImage, drawX, drawY, tileSize, tileSize);
+                            // gc.drawImage(currentWaterImage, drawX, drawY, tileSize, tileSize); // VECCHIO
+                            gc.drawImage(currentWaterImage, drawX, drawY); // NUOVO: Asset gia ingrandito
                         } else {
-                            gc.setFill(Color.web("#1E90FF"));
-                            gc.fillRect(drawX, drawY, tileSize, tileSize);
+                            // fallback colore
                         }
                     }
                 }
             }
         }
 
-        // 3. RENDER DEL GIOCATORE
-        // Il giocatore ora è FISSO al centro dello schermo!
-        // Ma per dargli quell'effetto di spinta/inerzia quando inizia a muoversi,
-        // lo disegniamo calcolando la sua differenza con la telecamera.
-        double playerVisualX = targetCameraX - cameraX + screenCenterX;
-        double playerVisualY = targetCameraY - cameraY + screenCenterY;
+        // --- 5. RENDER DEL GIOCATORE ---
+        // Il giocatore viene disegnato esattamente con la stessa formula della mappa!
+        // Posizione nel mondo del giocatore - Posizione Telecamera
+        double playerDrawX = playerWorldX - cameraX;
+        double playerDrawY = playerWorldY - cameraY;
 
-        gc.drawImage(playerImage, playerVisualX, playerVisualY, tileSize, tileSize);
+        gc.drawImage(playerImage, playerDrawX, playerDrawY);
+
+    }
+
+    /**
+     * Ingrandisce un'immagine nitida (pixel-art) mantenendo la nitidezza
+     * utilizzando l'algoritmo Nearest Neighbor.
+     *
+     * @param original L'immagine originale nitida (piccola).
+     * @param scale Il fattore di ingrandimento intero.
+     * @return Una nuova immagine ingrandita e nitida.
+     */
+    private Image scalePixelArt(Image original, int scale) {
+        if (scale <= 1) return original; // Nessun ingrandimento necessario
+
+        int originalWidth = (int) original.getWidth();
+        int originalHeight = (int) original.getHeight();
+        int targetWidth = originalWidth * scale;
+        int targetHeight = originalHeight * scale;
+
+        PixelReader reader = original.getPixelReader();
+        WritableImage scaled = new WritableImage(targetWidth, targetHeight);
+        PixelWriter writer = scaled.getPixelWriter();
+
+        // Copiamo i pixel con l'algoritmo Nearest Neighbor
+        for (int y = 0; y < targetHeight; y++) {
+            for (int x = 0; x < targetWidth; x++) {
+                // Troviamo il pixel originale corrispondente
+                // (arrotondamento per Nearest Neighbor: per scale=3, x=0,1,2 map to srcX=0)
+                int srcX = x / scale;
+                int srcY = y / scale;
+
+                // Copiamo il colore dal pixel originale
+                writer.setColor(x, y, reader.getColor(srcX, srcY));
+            }
+        }
+        return scaled;
     }
 }
