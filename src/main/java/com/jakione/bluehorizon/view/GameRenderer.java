@@ -24,6 +24,8 @@ public class GameRenderer extends Canvas implements GameObserver {
     // CACHE DEGLI ASSET GRAFICI
     private Image waterTexture1;
     private Image waterTexture2;
+    private Image rockTexture1;
+    private Image rockTexture2;
     private Image playerImage;
 
     // STATO DELL'ANIMAZIONE VISIVA
@@ -35,7 +37,7 @@ public class GameRenderer extends Canvas implements GameObserver {
     private double cameraX = -1;
     private double cameraY = -1;
 
-    private final double SMOOTHING_FACTOR = 0.15; // Un po' più basso per un effetto "mare" più morbido
+    private final double SMOOTHING_FACTOR = 0.075; // Un po' più basso per un effetto "mare" più morbido
 
     public GameRenderer(GameModel model) {
         this.model = model;
@@ -54,13 +56,17 @@ public class GameRenderer extends Canvas implements GameObserver {
     private void loadAssets() {
         try {
             // 1. Carichiamo gli asset originali (piccoli)
-            Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/watertile1.png"));
-            Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/watertile2.png"));
+            Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile1.png"));
+            Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile2.png"));
             Image originalPlayer = new Image(getClass().getResourceAsStream("/Player/P2down (1).png"));
+            Image originalRock1 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock1.png"));
+            Image originalRock2 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock2.png"));
 
             // 2. Ingrandiamo gli asset alla dimensione `tileSize` finale mantenendo la nitidezza (scale = 3)
             waterTexture1 = scalePixelArt(originalWater1, scale);
             waterTexture2 = scalePixelArt(originalWater2, scale);
+            rockTexture1 = scalePixelArt(originalRock1, scale);
+            rockTexture2 = scalePixelArt(originalRock2, scale);
             playerImage = scalePixelArt(originalPlayer, scale);
 
             // In questo modo, waterTexture1, 2 e playerImage sono GIA grandi 48x48
@@ -120,31 +126,53 @@ public class GameRenderer extends Canvas implements GameObserver {
         cameraX += (targetCameraX - cameraX) * SMOOTHING_FACTOR;
         cameraY += (targetCameraY - cameraY) * SMOOTHING_FACTOR;
 
-        // --- GESTIONE TEXTURE ACQUA ---
+        // --- GESTIONE TEXTURE WATER ---
         int frameIndex = (waterFrameCounter / animationSpeed) % 2;
         Image currentWaterImage = (waterTexture1 != null && waterTexture2 != null)
                 ? ((frameIndex == 0) ? waterTexture1 : waterTexture2)
                 : waterTexture1;
+        // --- GESTIONE TEXTURE ROCK ---
+        Image currentRockImage = (rockTexture1 != null && rockTexture2 != null)
+                ? ((frameIndex == 0) ? rockTexture1 : rockTexture2)
+                : rockTexture1;
 
         // --- 4. RENDER DELLA MAPPA ---
         for (int col = 0; col < model.getMaxColumns(); col++) {
             for (int row = 0; row < model.getMaxRows(); row++) {
 
-                // Ora la formula è semplicissima: Posizione nel mondo - Posizione Telecamera
                 double drawX = (col * tileSize) - cameraX;
                 double drawY = (row * tileSize) - cameraY;
 
-                // Culling: Disegna solo se visibile
+                // Culling: Disegna solo se visibile all'interno della telecamera
                 if (drawX + tileSize > 0 && drawX < screenWidth &&
                         drawY + tileSize > 0 && drawY < screenHeight) {
 
-                    if (map[col][row] == TileType.WATER) {
-                        if (currentWaterImage != null) {
-                            // gc.drawImage(currentWaterImage, drawX, drawY, tileSize, tileSize); // VECCHIO
-                            gc.drawImage(currentWaterImage, drawX, drawY); // NUOVO: Asset gia ingrandito
-                        } else {
-                            // fallback colore
-                        }
+                    // Estrapoliamo il tipo di casella letto dal file di testo tramite il Model
+                    TileType currentTile = map[col][row];
+
+                    // Smistiamo il rendering in base all'Enum
+                    switch (currentTile) {
+                        case WATER:
+                            if (currentWaterImage != null) {
+                                gc.drawImage(currentWaterImage, drawX, drawY);
+                            }
+                            break;
+
+                        case ROCK:
+                            if (currentWaterImage != null) {
+                                gc.drawImage(currentWaterImage, drawX, drawY);
+                            }
+                            if (currentRockImage != null) {
+                                gc.drawImage(currentRockImage, drawX, drawY);
+                            }
+                            break;
+
+                        case LAND:
+                            // Predisposto per il futuro, pronto all'uso!
+                            break;
+
+                        default:
+                            break;
                     }
                 }
             }

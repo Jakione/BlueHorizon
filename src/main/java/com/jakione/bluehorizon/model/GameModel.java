@@ -12,7 +12,7 @@ public class GameModel {
     private int maxColumns;
     private int maxRows;
     private boolean isRunning;
-    private Player player;
+    private final Player player;
 
     // Struttura dati che rappresenta il mondo di gioco
     private TileType[][] mapGrid;

@@ -9,7 +9,7 @@ package com.jakione.bluehorizon.model;
 public enum TileType {
     WATER(0),
     LAND(1),
-    OBSTACLE(2);
+    ROCK(2);
 
     private final int id;
 
