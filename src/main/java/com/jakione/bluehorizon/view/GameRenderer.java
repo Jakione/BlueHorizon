@@ -13,6 +13,9 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 public class GameRenderer extends Canvas implements GameObserver {
 
     private final int originalTileSize = 16;
@@ -26,7 +29,19 @@ public class GameRenderer extends Canvas implements GameObserver {
     private Image waterTexture2;
     private Image rockTexture1;
     private Image rockTexture2;
+    private Image sandTexture;
+    private Image sandWaterTexture1;
+    private Image sandWaterTexture2;
     private Image playerImage;
+
+    private enum CoastShape {
+        NORTH, SOUTH, EAST, WEST,
+        NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST,
+        DEFAULT // Nel caso di una tile isolata
+    }
+
+    // Mappa che collega ogni forma a un array di frame animati (es. indice 0 = frame 1, indice 1 = frame 2)
+    private final Map<CoastShape, Image[]> sandWaterAnimations = new EnumMap<>(CoastShape.class);
 
     // STATO DELL'ANIMAZIONE VISIVA
     private int waterFrameCounter = 0;
@@ -53,6 +68,31 @@ public class GameRenderer extends Canvas implements GameObserver {
         render();
     }
 
+    private void loadSandWaterAsset(CoastShape shape, String basePath) {
+        String path1 = basePath + "1.png";
+        String path2 = basePath + "2.png";
+
+        java.net.URL url1 = getClass().getResource(path1);
+        java.net.URL url2 = getClass().getResource(path2);
+
+        // Controllo 1: I file esistono?
+        if (url1 == null) throw new RuntimeException("ERRORE: File non trovato -> " + path1);
+        if (url2 == null) throw new RuntimeException("ERRORE: File non trovato -> " + path2);
+
+        Image img1 = new Image(url1.toExternalForm());
+        Image img2 = new Image(url2.toExternalForm());
+
+        // Controllo 2: I file sono immagini PNG valide e non corrotte?
+        if (img1.isError() || img1.getWidth() == 0) {
+            throw new RuntimeException("ERRORE: Il file esiste ma è corrotto o vuoto -> " + path1);
+        }
+        if (img2.isError() || img2.getWidth() == 0) {
+            throw new RuntimeException("ERRORE: Il file esiste ma è corrotto o vuoto -> " + path2);
+        }
+
+        sandWaterAnimations.put(shape, new Image[]{ scalePixelArt(img1, scale), scalePixelArt(img2, scale) });
+    }
+
     private void loadAssets() {
         try {
             // 1. Carichiamo gli asset originali (piccoli)
@@ -61,20 +101,80 @@ public class GameRenderer extends Canvas implements GameObserver {
             Image originalPlayer = new Image(getClass().getResourceAsStream("/Player/P2down (1).png"));
             Image originalRock1 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock1.png"));
             Image originalRock2 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock2.png"));
+            Image originalSand = new Image(getClass().getResourceAsStream("/Tile/Sand/sand.png"));
+            Image originalSandWater1 = new Image(getClass().getResourceAsStream("/Tile/Sand_Water/sand-water1.png"));
+            Image originalSandWater2 = new Image(getClass().getResourceAsStream("/Tile/Sand_Water/sand-water2.png"));
+
+            loadSandWaterAsset(CoastShape.NORTH, "/Tile/Sand_Water/Sand_Water_North/");
+            loadSandWaterAsset(CoastShape.SOUTH, "/Tile/Sand_Water/Sand_Water_South/");
+            loadSandWaterAsset(CoastShape.EAST, "/Tile/Sand_Water/Sand_Water_Est/");
+            loadSandWaterAsset(CoastShape.WEST, "/Tile/Sand_Water/Sand_Water_West/");
+
+            loadSandWaterAsset(CoastShape.NORTHEAST, "/Tile/Sand_Water/Sand_Water_Corners/northest/");
+            loadSandWaterAsset(CoastShape.NORTHWEST, "/Tile/Sand_Water/Sand_Water_Corners/northwest/");
+            loadSandWaterAsset(CoastShape.SOUTHEAST, "/Tile/Sand_Water/Sand_Water_Corners/southest/");
+            loadSandWaterAsset(CoastShape.SOUTHWEST, "/Tile/Sand_Water/Sand_Water_Corners/southwest/");
+            sandWaterAnimations.put(CoastShape.DEFAULT, sandWaterAnimations.get(CoastShape.NORTH));
 
             // 2. Ingrandiamo gli asset alla dimensione `tileSize` finale mantenendo la nitidezza (scale = 3)
             waterTexture1 = scalePixelArt(originalWater1, scale);
             waterTexture2 = scalePixelArt(originalWater2, scale);
             rockTexture1 = scalePixelArt(originalRock1, scale);
             rockTexture2 = scalePixelArt(originalRock2, scale);
+            sandTexture = scalePixelArt(originalSand, scale);
+            sandWaterTexture1 = scalePixelArt(originalSandWater1, scale);
+            sandWaterTexture2 = scalePixelArt(originalSandWater2, scale);
             playerImage = scalePixelArt(originalPlayer, scale);
 
             // In questo modo, waterTexture1, 2 e playerImage sono GIA grandi 48x48
             // e GIA nitide come pixel-art.
 
         } catch (Exception e) {
-            System.err.println("Attenzione: Impossibile caricare water_1.png, water_2.png o south.png.");
+            System.err.println("Attenzione: Impossibile caricare qualche risorsa.");
+            e.printStackTrace();
         }
+    }
+
+    /**
+     * Metodo di supporto per l'Auto-Tiling.
+     * Considera "Terra" sia la sabbia pura che le altre caselle di bordo.
+     */
+    private boolean isLand(int col, int row, TileType[][] map) {
+        // Se usciamo dai bordi della mappa, consideriamo il vuoto come mare (false)
+        if (col < 0 || col >= model.getMaxColumns() || row < 0 || row >= model.getMaxRows()) {
+            return false;
+        }
+        TileType type = map[col][row];
+        return type == TileType.SAND || type == TileType.SAND_WATER;
+    }
+
+    /**
+     * Analizza le adiacenze per determinare quale sprite di costa renderizzare.
+     */
+    private CoastShape determineCoastShape(int col, int row, TileType[][] map) {
+        // 1. Sondiamo i 4 punti cardinali usando la nuova logica "isLand"
+        boolean landN = isLand(col, row - 1, map);
+        boolean landS = isLand(col, row + 1, map);
+        boolean landE = isLand(col + 1, row, map);
+        boolean landW = isLand(col - 1, row, map);
+
+        // --- 2. RISOLUZIONE DEGLI ANGOLI ESTERNI ---
+        // Un angolo si verifica quando abbiamo terra su due lati adiacenti, e mare sugli altri due.
+        // (Es: Se ho terra a Sud e a Est, significa che l'angolo sporge verso Nord-Ovest)
+        if (landS && landE && !landN && !landW) return CoastShape.NORTHWEST;
+        if (landS && landW && !landN && !landE) return CoastShape.NORTHEAST;
+        if (landN && landE && !landS && !landW) return CoastShape.SOUTHWEST;
+        if (landN && landW && !landS && !landE) return CoastShape.SOUTHEAST;
+
+        // --- 3. RISOLUZIONE DELLE SPONDE DRITTE ---
+        // Se arriviamo qui, non è un angolo. La direzione in cui NON c'è terra indica la costa.
+        if (!landN && landS) return CoastShape.NORTH; // Mare a nord, Terra a sud -> Costa NORD
+        if (!landS && landN) return CoastShape.SOUTH; // Mare a sud, Terra a nord -> Costa SUD
+        if (!landE && landW) return CoastShape.EAST;  // Mare a est, Terra a ovest -> Costa EST
+        if (!landW && landE) return CoastShape.WEST;  // Mare a ovest, Terra a est -> Costa OVEST
+
+        // Fallback per blocchi isolati 1x1 o forme impreviste
+        return CoastShape.DEFAULT;
     }
 
     @Override
@@ -136,6 +236,11 @@ public class GameRenderer extends Canvas implements GameObserver {
                 ? ((frameIndex == 0) ? rockTexture1 : rockTexture2)
                 : rockTexture1;
 
+        // --- GESTIONE TEXTURE SAND_WATER ---
+        Image currentSandWaterImage = (sandWaterTexture1 != null && sandWaterTexture2 != null)
+                ? ((frameIndex == 0) ? sandWaterTexture1 : sandWaterTexture2)
+                : sandWaterTexture1;
+
         // --- 4. RENDER DELLA MAPPA ---
         for (int col = 0; col < model.getMaxColumns(); col++) {
             for (int row = 0; row < model.getMaxRows(); row++) {
@@ -167,8 +272,20 @@ public class GameRenderer extends Canvas implements GameObserver {
                             }
                             break;
 
-                        case LAND:
-                            // Predisposto per il futuro, pronto all'uso!
+                        case SAND:
+                            if (sandTexture != null){
+                                gc.drawImage(sandTexture, drawX, drawY);
+                            }
+                            break;
+
+                        case SAND_WATER:
+                            CoastShape shape = determineCoastShape(col, row, map);
+                            Image[] frames = sandWaterAnimations.get(shape);
+
+                            if (frames != null && frames.length == 2) {
+                                // Usa l'indice calcolato precedentemente per tutte le animazioni
+                                gc.drawImage(frames[frameIndex], drawX, drawY);
+                            }
                             break;
 
                         default:
@@ -197,6 +314,14 @@ public class GameRenderer extends Canvas implements GameObserver {
      * @return Una nuova immagine ingrandita e nitida.
      */
     private Image scalePixelArt(Image original, int scale) {
+        if (original == null) return null;
+
+        // Guardia contro immagini decodificate male
+        if (original.getWidth() == 0 || original.getHeight() == 0) {
+            System.err.println("Attenzione: bypassato lo scaling per un'immagine con dimensioni 0.");
+            return original;
+        }
+
         if (scale <= 1) return original; // Nessun ingrandimento necessario
 
         int originalWidth = (int) original.getWidth();
