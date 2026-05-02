@@ -1,9 +1,6 @@
 package com.jakione.bluehorizon.view;
 
-import com.jakione.bluehorizon.model.GameModel;
-import com.jakione.bluehorizon.model.GameObserver;
-import com.jakione.bluehorizon.model.Player;
-import com.jakione.bluehorizon.model.TileType;
+import com.jakione.bluehorizon.model.*;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -26,7 +23,10 @@ public class GameRenderer extends Canvas implements GameObserver {
     private Image waterTexture2;
     private Image rockTexture1;
     private Image rockTexture2;
-    private Image playerImage;
+    private Image playerUp;
+    private Image playerDown;
+    private Image playerLeft;
+    private Image playerRight;
 
     // STATO DELL'ANIMAZIONE VISIVA
     private int waterFrameCounter = 0;
@@ -55,25 +55,31 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private void loadAssets() {
         try {
-            // 1. Carichiamo gli asset originali (piccoli)
+            // 1. Carichiamo gli asset originali (piccoli) in variabili locali
             Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile1.png"));
             Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile2.png"));
-            Image originalPlayer = new Image(getClass().getResourceAsStream("/Player/P2down (1).png"));
             Image originalRock1 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock1.png"));
             Image originalRock2 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock2.png"));
+            Image rawPlayerDown = new Image(getClass().getResourceAsStream("/Player/P2down.png"));
+            Image rawPlayerUp = new Image(getClass().getResourceAsStream("/Player/P2up.png"));
+            Image rawPlayerRight = new Image(getClass().getResourceAsStream("/Player/P2right.png"));
+            Image rawPlayerLeft = new Image(getClass().getResourceAsStream("/Player/P2left.png"));
 
-            // 2. Ingrandiamo gli asset alla dimensione `tileSize` finale mantenendo la nitidezza (scale = 3)
+            // 2. Ingrandiamo gli asset e assegniamo ai campi della classe
             waterTexture1 = scalePixelArt(originalWater1, scale);
             waterTexture2 = scalePixelArt(originalWater2, scale);
             rockTexture1 = scalePixelArt(originalRock1, scale);
             rockTexture2 = scalePixelArt(originalRock2, scale);
-            playerImage = scalePixelArt(originalPlayer, scale);
 
-            // In questo modo, waterTexture1, 2 e playerImage sono GIA grandi 48x48
-            // e GIA nitide come pixel-art.
+            // Usiamo DIRETTAMENTE le variabili locali raw appena caricate
+            this.playerDown = scalePixelArt(rawPlayerDown, scale);
+            this.playerUp = scalePixelArt(rawPlayerUp, scale);
+            this.playerRight = scalePixelArt(rawPlayerRight, scale);
+            this.playerLeft = scalePixelArt(rawPlayerLeft, scale);
 
         } catch (Exception e) {
-            System.err.println("Attenzione: Impossibile caricare water_1.png, water_2.png o south.png.");
+            System.err.println("Attenzione: Impossibile caricare gli asset: " + e.getMessage());
+            e.printStackTrace(); // Questo ti aiuterà a vedere l'errore esatto nella console se capita ancora
         }
     }
 
@@ -179,12 +185,25 @@ public class GameRenderer extends Canvas implements GameObserver {
         }
 
         // --- 5. RENDER DEL GIOCATORE ---
+
         // Il giocatore viene disegnato esattamente con la stessa formula della mappa!
         // Posizione nel mondo del giocatore - Posizione Telecamera
         double playerDrawX = playerWorldX - cameraX;
         double playerDrawY = playerWorldY - cameraY;
+        // Recuperiamo la direzione attuale dal Modello
+        Direction currentDir = player.getCurrentDirection();
+        Image spriteToDraw = playerDown; // Sprite di default per sicurezza
 
-        gc.drawImage(playerImage, playerDrawX, playerDrawY);
+        // Selezioniamo l'immagine corretta in base alla direzione
+        switch (currentDir) {
+            case UP -> spriteToDraw = this.playerUp;
+            case DOWN -> spriteToDraw = this.playerDown;
+            case LEFT -> spriteToDraw = this.playerLeft;
+            case RIGHT -> spriteToDraw = this.playerRight;
+        }
+
+        // Disegniamo l'immagine selezionata
+        gc.drawImage(spriteToDraw, playerDrawX, playerDrawY);
 
     }
 
