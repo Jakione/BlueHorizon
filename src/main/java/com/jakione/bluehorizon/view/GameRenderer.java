@@ -98,7 +98,6 @@ public class GameRenderer extends Canvas implements GameObserver {
             // 1. Carichiamo gli asset originali (piccoli) in variabili locali
             Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile1.png"));
             Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile2.png"));
-            Image originalPlayer = new Image(getClass().getResourceAsStream("/Player/P2down (1).png"));
             Image originalRock1 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock1.png"));
             Image originalRock2 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock2.png"));
             Image rawPlayerDown = new Image(getClass().getResourceAsStream("/Player/P2down.png"));
@@ -106,10 +105,8 @@ public class GameRenderer extends Canvas implements GameObserver {
             Image rawPlayerRight = new Image(getClass().getResourceAsStream("/Player/P2right.png"));
             Image rawPlayerLeft = new Image(getClass().getResourceAsStream("/Player/P2left.png"));
             Image originalSand = new Image(getClass().getResourceAsStream("/Tile/Sand/sand.png"));
-            Image originalSandWater1 = new Image(getClass().getResourceAsStream("/Tile/Sand_Water/sand-water1.png"));
-            Image originalSandWater2 = new Image(getClass().getResourceAsStream("/Tile/Sand_Water/sand-water2.png"));
 
-            loadSandWaterAsset(CoastShape.NORTH, "/Tile/Sand_Water/Sand_Water_North/");
+            loadSandWaterAsset(CoastShape.NORTH,  "/Tile/Sand_Water/Sand_Water_North/");
             loadSandWaterAsset(CoastShape.SOUTH, "/Tile/Sand_Water/Sand_Water_South/");
             loadSandWaterAsset(CoastShape.EAST, "/Tile/Sand_Water/Sand_Water_Est/");
             loadSandWaterAsset(CoastShape.WEST, "/Tile/Sand_Water/Sand_Water_West/");
@@ -126,9 +123,7 @@ public class GameRenderer extends Canvas implements GameObserver {
             rockTexture1 = scalePixelArt(originalRock1, scale);
             rockTexture2 = scalePixelArt(originalRock2, scale);
             sandTexture = scalePixelArt(originalSand, scale);
-            sandWaterTexture1 = scalePixelArt(originalSandWater1, scale);
-            sandWaterTexture2 = scalePixelArt(originalSandWater2, scale);
-            playerImage = scalePixelArt(originalPlayer, scale);
+
 
             // Usiamo DIRETTAMENTE le variabili locali raw appena caricate
             this.playerDown = scalePixelArt(rawPlayerDown, scale);
