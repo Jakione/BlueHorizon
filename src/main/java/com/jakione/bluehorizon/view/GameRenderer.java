@@ -36,8 +36,9 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private enum CoastShape {
         NORTH, SOUTH, EAST, WEST,
-        NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST,
-        DEFAULT // Nel caso di una tile isolata
+        NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, // Angoli esterni (CornersW)
+        INNER_NORTHEAST, INNER_NORTHWEST, INNER_SOUTHEAST, INNER_SOUTHWEST, // Nuovi angoli interni (CornersS)
+        DEFAULT
     }
 
     // Mappa che collega ogni forma a un array di frame animati (es. indice 0 = frame 1, indice 1 = frame 2)
@@ -111,10 +112,18 @@ public class GameRenderer extends Canvas implements GameObserver {
             loadSandWaterAsset(CoastShape.EAST, "/Tile/Sand_Water/Sand_Water_Est/");
             loadSandWaterAsset(CoastShape.WEST, "/Tile/Sand_Water/Sand_Water_West/");
 
-            loadSandWaterAsset(CoastShape.NORTHEAST, "/Tile/Sand_Water/Sand_Water_Corners/northest/");
-            loadSandWaterAsset(CoastShape.NORTHWEST, "/Tile/Sand_Water/Sand_Water_Corners/northwest/");
-            loadSandWaterAsset(CoastShape.SOUTHEAST, "/Tile/Sand_Water/Sand_Water_Corners/southest/");
-            loadSandWaterAsset(CoastShape.SOUTHWEST, "/Tile/Sand_Water/Sand_Water_Corners/southwest/");
+            // Caricamento Angoli ESTERNI (CornersW - Convessi)
+            loadSandWaterAsset(CoastShape.NORTHEAST, "/Tile/Sand_Water/Sand_Water_CornersW/northest/");
+            loadSandWaterAsset(CoastShape.NORTHWEST, "/Tile/Sand_Water/Sand_Water_CornersW/northwest/");
+            loadSandWaterAsset(CoastShape.SOUTHEAST, "/Tile/Sand_Water/Sand_Water_CornersW/southest/");
+            loadSandWaterAsset(CoastShape.SOUTHWEST, "/Tile/Sand_Water/Sand_Water_CornersW/southwest/");
+
+            // Caricamento Angoli INTERNI (CornersS - Concavi)
+            loadSandWaterAsset(CoastShape.INNER_NORTHEAST, "/Tile/Sand_Water/Sand_Water_CornersS/northest/");
+            loadSandWaterAsset(CoastShape.INNER_NORTHWEST, "/Tile/Sand_Water/Sand_Water_CornersS/northwest/");
+            loadSandWaterAsset(CoastShape.INNER_SOUTHEAST, "/Tile/Sand_Water/Sand_Water_CornersS/southest/");
+            loadSandWaterAsset(CoastShape.INNER_SOUTHWEST, "/Tile/Sand_Water/Sand_Water_CornersS/southwest/");
+
             sandWaterAnimations.put(CoastShape.DEFAULT, sandWaterAnimations.get(CoastShape.NORTH));
 
             // 2. Ingrandiamo gli asset e assegniamo ai campi della classe
@@ -152,30 +161,45 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     /**
      * Analizza le adiacenze per determinare quale sprite di costa renderizzare.
+     * Logica ibrida: Speculare per i bordi esterni, Diretta per i nuovi angoli interni.
      */
     private CoastShape determineCoastShape(int col, int row, TileType[][] map) {
-        // 1. Sondiamo i 4 punti cardinali usando la nuova logica "isLand"
+        // 1. Sondiamo le 4 direzioni cardinali
         boolean landN = isLand(col, row - 1, map);
         boolean landS = isLand(col, row + 1, map);
         boolean landE = isLand(col + 1, row, map);
         boolean landW = isLand(col - 1, row, map);
 
-        // --- 2. RISOLUZIONE DEGLI ANGOLI ESTERNI ---
-        // Un angolo si verifica quando abbiamo terra su due lati adiacenti, e mare sugli altri due.
-        // (Es: Se ho terra a Sud e a Est, significa che l'angolo sporge verso Nord-Ovest)
-        if (landS && landE && !landN && !landW) return CoastShape.NORTHWEST;
-        if (landS && landW && !landN && !landE) return CoastShape.NORTHEAST;
+        // --- 2. GESTIONE DEGLI ANGOLI INTERNI (CornersS - Concavi) ---
+        if (landN && landS && landE && landW) {
+            boolean landNE = isLand(col + 1, row - 1, map);
+            boolean landNW = isLand(col - 1, row - 1, map);
+            boolean landSE = isLand(col + 1, row + 1, map);
+            boolean landSW = isLand(col - 1, row + 1, map);
+
+            // NESSUNA INVERSIONE: Se l'acqua è a Nord-Est, chiamiamo la cartella NORTHEAST
+            if (!landNE) return CoastShape.INNER_NORTHEAST;
+            if (!landNW) return CoastShape.INNER_NORTHWEST;
+            if (!landSE) return CoastShape.INNER_SOUTHEAST;
+            if (!landSW) return CoastShape.INNER_SOUTHWEST;
+
+            return CoastShape.DEFAULT;
+        }
+
+        // --- 3. RISOLUZIONE DEGLI ANGOLI ESTERNI (CornersW - Convessi) ---
+        // Manteniamo l'inversione speculare che ha risolto il problema precedente
         if (landN && landE && !landS && !landW) return CoastShape.SOUTHWEST;
         if (landN && landW && !landS && !landE) return CoastShape.SOUTHEAST;
+        if (landS && landE && !landN && !landW) return CoastShape.NORTHWEST;
+        if (landS && landW && !landN && !landE) return CoastShape.NORTHEAST;
 
-        // --- 3. RISOLUZIONE DELLE SPONDE DRITTE ---
-        // Se arriviamo qui, non è un angolo. La direzione in cui NON c'è terra indica la costa.
-        if (!landN && landS) return CoastShape.NORTH; // Mare a nord, Terra a sud -> Costa NORD
-        if (!landS && landN) return CoastShape.SOUTH; // Mare a sud, Terra a nord -> Costa SUD
-        if (!landE && landW) return CoastShape.EAST;  // Mare a est, Terra a ovest -> Costa EST
-        if (!landW && landE) return CoastShape.WEST;  // Mare a ovest, Terra a est -> Costa OVEST
+        // --- 4. RISOLUZIONE DELLE SPONDE DRITTE ---
+        // Manteniamo l'inversione speculare
+        if (!landS && landN) return CoastShape.SOUTH;
+        if (!landN && landS) return CoastShape.NORTH;
+        if (!landW && landE) return CoastShape.WEST;
+        if (!landE && landW) return CoastShape.EAST;
 
-        // Fallback per blocchi isolati 1x1 o forme impreviste
         return CoastShape.DEFAULT;
     }
 
