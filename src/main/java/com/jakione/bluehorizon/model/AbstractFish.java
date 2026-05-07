@@ -13,7 +13,7 @@ public abstract class AbstractFish implements Fish {
     /**
      * Costruttore protetto, invocabile solo dalle classi figlie.
      */
-    protected AbstractFish(String name, double weight, int length) {
+    protected AbstractFish(String name, double weight, double length) {
         this.name = name;
         this.weight = weight;
         this.length = length;

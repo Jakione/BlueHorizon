@@ -9,8 +9,8 @@ package com.jakione.bluehorizon.model;
  */
 public class StandardFish extends AbstractFish {
 
-    public StandardFish(String name, double weight, int scoreValue) {
-        super(name, weight, scoreValue);
+    public StandardFish(String name, double weight, double length) {
+        super(name, weight, length);
     }
 
     // Essendo un pesce "standard", non ha comportamenti aggiuntivi.
