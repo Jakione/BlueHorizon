@@ -14,7 +14,7 @@ public class GameModel {
     private boolean isRunning;
     private final Player player;
 
-    private Weather currentWeather = Weather.SUNNY;
+    private Weather currentWeather = Weather.RAINY;
 
     // Struttura dati che rappresenta il mondo di gioco
     private TileType[][] mapGrid;
