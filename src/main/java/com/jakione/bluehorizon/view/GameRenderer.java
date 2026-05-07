@@ -55,6 +55,25 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private final double SMOOTHING_FACTOR = 0.075; // Un po' più basso per un effetto "mare" più morbido
 
+    private final int MAX_RAINDROPS = 150;
+    private final RainDrop[] rainDrops = new RainDrop[MAX_RAINDROPS];
+
+    /**
+     * Classe interna privata per gestire le particelle visive della pioggia.
+     * Esiste solo nella View, il Model non sa nulla di tutto ciò.
+     */
+    private class RainDrop {
+        double x, y, speed, length;
+
+        void reset(double screenWidth, double screenHeight) {
+            this.x = Math.random() * screenWidth;
+            // Le facciamo nascere leggermente fuori dallo schermo in alto
+            this.y = Math.random() * screenHeight - screenHeight;
+            this.speed = 15 + Math.random() * 15; // Velocità variabile
+            this.length = 10 + Math.random() * 15;
+        }
+    }
+
     public GameRenderer(GameModel model) {
         this.model = model;
 
@@ -64,6 +83,12 @@ public class GameRenderer extends Canvas implements GameObserver {
         int screenHeight = 600;
         this.setWidth(screenWidth);
         this.setHeight(screenHeight);
+
+        // Inizializza l'Object Pool per le particelle visive
+        for (int i = 0; i < MAX_RAINDROPS; i++) {
+            rainDrops[i] = new RainDrop();
+            rainDrops[i].reset(screenWidth, screenHeight);
+        }
 
         loadAssets();
         render();
@@ -342,6 +367,59 @@ public class GameRenderer extends Canvas implements GameObserver {
         // Disegniamo l'immagine selezionata
         gc.drawImage(spriteToDraw, playerDrawX, playerDrawY);
 
+        // --- 6. RENDER DEL METEO (NUOVO) ---
+        // Assumendo che il Model esponga il meteo attuale. Adatta il getter se ha un nome diverso.
+        Weather currentWeather = model.getCurrentWeather();
+        if (currentWeather != null) {
+            renderWeather(gc, currentWeather, screenWidth, screenHeight);
+        }
+
+    }
+
+    private void renderWeather(GraphicsContext gc, Weather currentWeather, double screenWidth, double screenHeight) {
+        if (currentWeather == Weather.SUNNY) {
+            return; // Nessun effetto
+        }
+
+        // 1. GESTIONE DEL VELO (OVERLAY)
+        Color overlayColor = Color.TRANSPARENT;
+
+        switch (currentWeather) {
+            case CLOUDY -> overlayColor = Color.rgb(20, 20, 30, 0.2); // Grigino leggero
+            case RAINY -> overlayColor = Color.rgb(10, 10, 40, 0.4);  // Bluastro scuro
+            case STORMY -> overlayColor = Color.rgb(0, 0, 20, 0.6);   // Molto scuro
+        }
+
+        gc.setFill(overlayColor);
+        gc.fillRect(0, 0, screenWidth, screenHeight);
+
+        // 2. GESTIONE DELLE PARTICELLE (Solo Pioggia/Tempesta)
+        if (currentWeather == Weather.RAINY || currentWeather == Weather.STORMY) {
+
+            gc.setStroke(Color.rgb(150, 150, 255, 0.6)); // Colore della pioggia
+
+            // In tempesta la pioggia è più spessa e veloce
+            double speedMultiplier = (currentWeather == Weather.STORMY) ? 1.8 : 1.0;
+            gc.setLineWidth((currentWeather == Weather.STORMY) ? 2.0 : 1.0);
+
+            // Inclinazione del vento (opzionale, ma dà un bell'effetto)
+            double windDrift = (currentWeather == Weather.STORMY) ? -4.0 : -1.0;
+
+            for (RainDrop drop : rainDrops) {
+                // Aggiorna posizione
+                drop.y += drop.speed * speedMultiplier;
+                drop.x += windDrift;
+
+                // Se la goccia esce dallo schermo, la resettiamo in alto
+                if (drop.y > screenHeight || drop.x < 0) {
+                    drop.reset(screenWidth, screenHeight);
+                    drop.x = Math.random() * screenWidth - windDrift * 50; // Compensa il vento alla rinascita
+                }
+
+                // Disegna la linea della goccia
+                gc.strokeLine(drop.x, drop.y, drop.x - windDrift, drop.y + drop.length);
+            }
+        }
     }
 
     /**

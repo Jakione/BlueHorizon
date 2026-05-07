@@ -14,6 +14,8 @@ public class GameModel {
     private boolean isRunning;
     private final Player player;
 
+    private Weather currentWeather = Weather.SUNNY;
+
     // Struttura dati che rappresenta il mondo di gioco
     private TileType[][] mapGrid;
 
@@ -78,4 +80,12 @@ public class GameModel {
 
     // Getter per permettere alla View di leggere la mappa
     public TileType[][] getMapGrid() { return mapGrid; }
+
+    public Weather getCurrentWeather() { return this.currentWeather; }
+
+    public void setCurrentWeather(Weather newWeather) {
+        if (this.currentWeather != newWeather) {
+            this.currentWeather = newWeather;
+        }
+    }
 }
