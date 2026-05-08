@@ -1,46 +1,49 @@
 package com.jakione.bluehorizon.model;
 
+import java.util.Random;
+
 /**
  * Rappresenta le condizioni meteorologiche del gioco.
  * Ogni condizione atmosferica porta con sé un modificatore base che influisce
  * sull'attività generale dei pesci e sulla difficoltà di pesca.
  */
 public enum Weather {
-
-    /**
-     * Condizioni standard. Nessun bonus o malus.
-     */
-    SUNNY("Soleggiato", 1.0),
-
-    /**
-     * I pesci tendono ad avvicinarsi alla superficie. Leggero bonus.
-     */
-    CLOUDY("Nuvoloso", 1.1),
-
-    /**
-     * Ottime condizioni per pescare, l'acqua è mossa e i pesci sono attivi.
-     */
-    RAINY("Pioggia", 1.25),
-
-    /**
-     * Condizioni estreme. Molto difficile pescare, ma potrebbe far apparire pesci rari.
-     * (Il malus generale è compensato dal fatto che alcuni pesci o strumenti
-     * specifici potrebbero avere bonus immensi durante le tempeste).
-     */
-    STORMY("Tempesta", 0.7);
+    SUNNY("Soleggiato", 1.0, 50),    // Molto comune
+    CLOUDY("Nuvoloso", 1.1, 25),    // Comune
+    RAINY("Pioggia", 1.25, 20),     // Raro
+    STORMY("Tempesta", 0.7, 5);     // Molto raro
 
     private final String description;
     private final double baseCatchModifier;
+    private final int weight; // Il "peso" per la probabilità
 
-    /**
-     * Costruttore dell'enum (sempre privato di default in Java).
-     *
-     * @param description       Descrizione testuale per la UI.
-     * @param baseCatchModifier Moltiplicatore base di probabilità.
-     */
-    Weather(String description, double baseCatchModifier) {
+    Weather(String description, double baseCatchModifier, int weight) {
         this.description = description;
         this.baseCatchModifier = baseCatchModifier;
+        this.weight = weight;
+    }
+
+    public int getWeight() { return weight; }
+
+    /**
+     * Seleziona un meteo casuale basato sui pesi (rarità).
+     */
+    public static Weather getRandomWeather() {
+        int totalWeight = 0;
+        for (Weather w : values()) {
+            totalWeight += w.getWeight();
+        }
+
+        int randomIndex = new Random().nextInt(totalWeight);
+        int currentSum = 0;
+
+        for (Weather w : values()) {
+            currentSum += w.getWeight();
+            if (randomIndex < currentSum) {
+                return w;
+            }
+        }
+        return SUNNY;
     }
 
     /**

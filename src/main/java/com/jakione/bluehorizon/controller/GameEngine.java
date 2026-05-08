@@ -1,11 +1,10 @@
 package com.jakione.bluehorizon.controller;
 
 
-import com.jakione.bluehorizon.model.Direction;
-import com.jakione.bluehorizon.model.GameModel;
-import com.jakione.bluehorizon.model.GameObserver;
+import com.jakione.bluehorizon.model.*;
 
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,16 +25,42 @@ public class GameEngine implements Runnable {
 
     // Nelle fasi avanzate, useremo un delta-time per un loop più preciso
     private final int targetFPS = 60;
+    private static final long WEATHER_CYCLE_MS = 30000; // Il meteo cambia ogni 30 secondi (per test)
+    private long lastWeatherChange = System.currentTimeMillis();
+    private long lastTimeCheck = 0;
 
-    /**
-     * Inizializza il motore agganciandolo al modello dei dati.
-     *
-     */
     public GameEngine(GameModel model) {
         this.model = model;
         this.observers = new ArrayList<>();
     }
 
+    private void updateEnvironment() {
+        long now = System.currentTimeMillis();
+
+        // 1. GESTIONE GIORNO/NOTTE REALE (Controllo ogni 5 secondi per non pesare sulla CPU)
+        if (now - lastTimeCheck >= 5000) {
+            updateRealTimeCycle();
+            lastTimeCheck = now;
+        }
+
+        // 2. GESTIONE CICLO METEO PROBABILISTICO
+        if (now - lastWeatherChange >= WEATHER_CYCLE_MS) {
+            Weather nextWeather = Weather.getRandomWeather();
+            model.setCurrentWeather(nextWeather);
+            lastWeatherChange = now;
+            System.out.println("Meteo cambiato in: " + nextWeather.getDescription());
+        }
+    }
+
+    private void updateRealTimeCycle() {
+        // Il controller non deve più sapere quali sono le ore di giorno o notte
+        TimeOfDay targetPhase = TimeOfDay.getRealTimePhase();
+
+        if (model.getTimeOfDay() != targetPhase) {
+            model.setTimeOfDay(targetPhase);
+            System.out.println("Fase oraria aggiornata: " + targetPhase.getDescription());
+        }
+    }
 
     public void handleMovementRequest(Direction direction) {
         long currentTime = System.currentTimeMillis();
@@ -85,13 +110,8 @@ public class GameEngine implements Runnable {
 
             // Applichiamo la logica e notifichiamo solo se è passato il tempo necessario
             if (currentTime - lastTime >= drawInterval) {
-                // 1. Aggiorna la posizione dei pesci che nuotano
-                // model.updateFishes();
+                updateEnvironment();
 
-                // 2. Aggiorna il meteo o la durata dei buff/debuff
-                // model.updateEnvironment();
-
-                // 3. Notifica la View che il mondo è cambiato
                 notifyObservers();
 
                 lastTime = currentTime;

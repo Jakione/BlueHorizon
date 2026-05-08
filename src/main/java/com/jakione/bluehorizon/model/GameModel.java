@@ -14,7 +14,8 @@ public class GameModel {
     private boolean isRunning;
     private final Player player;
 
-    private Weather currentWeather = Weather.RAINY;
+    private Weather currentWeather = Weather.getRandomWeather();
+    private TimeOfDay currentTimeOfDay = TimeOfDay.getRealTimePhase();
 
     // Struttura dati che rappresenta il mondo di gioco
     private TileType[][] mapGrid;
@@ -88,4 +89,13 @@ public class GameModel {
             this.currentWeather = newWeather;
         }
     }
+
+    public TimeOfDay getTimeOfDay() { return currentTimeOfDay; }
+
+    public void setTimeOfDay(TimeOfDay timeOfDay) {
+        if (this.currentTimeOfDay != timeOfDay) {
+            this.currentTimeOfDay = timeOfDay;
+        }
+    }
+
 }

@@ -66,7 +66,11 @@ public class GameRenderer extends Canvas implements GameObserver {
         double x, y, speed, length;
 
         void reset(double screenWidth, double screenHeight) {
-            this.x = Math.random() * screenWidth;
+            // Aggiungiamo un buffer di 300 pixel fuori dallo schermo a destra.
+            // Il vento soffia verso sinistra: in questo modo le gocce nate
+            // nell'area invisibile voleranno verso l'angolo in basso a destra.
+            this.x = Math.random() * (screenWidth + 300);
+
             // Le facciamo nascere leggermente fuori dallo schermo in alto
             this.y = Math.random() * screenHeight - screenHeight;
             this.speed = 15 + Math.random() * 15; // Velocità variabile
@@ -374,6 +378,8 @@ public class GameRenderer extends Canvas implements GameObserver {
             renderWeather(gc, currentWeather, screenWidth, screenHeight);
         }
 
+        // --- 7. RENDER GIORNO/NOTTE (NUOVO) ---
+        renderTimeOfDay(gc, screenWidth, screenHeight);
     }
 
     private void renderWeather(GraphicsContext gc, Weather currentWeather, double screenWidth, double screenHeight) {
@@ -413,12 +419,25 @@ public class GameRenderer extends Canvas implements GameObserver {
                 // Se la goccia esce dallo schermo, la resettiamo in alto
                 if (drop.y > screenHeight || drop.x < 0) {
                     drop.reset(screenWidth, screenHeight);
-                    drop.x = Math.random() * screenWidth - windDrift * 50; // Compensa il vento alla rinascita
+                    // drop.x = Math.random() * screenWidth - windDrift * 50; // --- CORREZIONE: RIMOSSA RIGA PROBLEMÁTICA ---
                 }
 
                 // Disegna la linea della goccia
                 gc.strokeLine(drop.x, drop.y, drop.x - windDrift, drop.y + drop.length);
             }
+        }
+    }
+
+    /**
+     * Applica un filtro visivo in base all'orario per simulare l'illuminazione.
+     */
+    private void renderTimeOfDay(GraphicsContext gc, double screenWidth, double screenHeight) {
+        TimeOfDay currentCycle = model.getTimeOfDay();
+
+        if (currentCycle == TimeOfDay.NIGHT) {
+            // Un blu scuro con alpha al 55% per oscurare la scena senza nasconderla del tutto
+            gc.setFill(Color.rgb(5, 10, 30, 0.55));
+            gc.fillRect(0, 0, screenWidth, screenHeight);
         }
     }
 
