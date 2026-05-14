@@ -35,6 +35,7 @@ public class GameRenderer extends Canvas implements GameObserver {
     private Image playerDown;
     private Image playerLeft;
     private Image playerRight;
+    private Image playerFishing;
 
     private enum CoastShape {
         NORTH, SOUTH, EAST, WEST,
@@ -136,6 +137,7 @@ public class GameRenderer extends Canvas implements GameObserver {
             Image rawPlayerUp = new Image(getClass().getResourceAsStream("/Player/P2up.png"));
             Image rawPlayerRight = new Image(getClass().getResourceAsStream("/Player/P2right.png"));
             Image rawPlayerLeft = new Image(getClass().getResourceAsStream("/Player/P2left.png"));
+            Image rawPlayerFishing = new Image(getClass().getResourceAsStream("/Player/P2_fishing_rod.png"));
             Image originalSand = new Image(getClass().getResourceAsStream("/Tile/Sand/sand.png"));
 
             loadSandWaterAsset(CoastShape.NORTH,  "/Tile/Sand_Water/Sand_Water_North/");
@@ -170,6 +172,7 @@ public class GameRenderer extends Canvas implements GameObserver {
             this.playerUp = scalePixelArt(rawPlayerUp, scale);
             this.playerRight = scalePixelArt(rawPlayerRight, scale);
             this.playerLeft = scalePixelArt(rawPlayerLeft, scale);
+            this.playerFishing = scalePixelArt(rawPlayerFishing, scale);
 
         } catch (Exception e) {
             System.err.println("Attenzione: Impossibile caricare qualche risorsa.");
@@ -363,11 +366,15 @@ public class GameRenderer extends Canvas implements GameObserver {
         Image spriteToDraw = playerDown; // Sprite di default per sicurezza
 
         // Selezioniamo l'immagine corretta in base alla direzione
-        switch (currentDir) {
-            case UP -> spriteToDraw = this.playerUp;
-            case DOWN -> spriteToDraw = this.playerDown;
-            case LEFT -> spriteToDraw = this.playerLeft;
-            case RIGHT -> spriteToDraw = this.playerRight;
+        if(!model.getPlayer().isFishing()) {
+            switch (currentDir) {
+                case UP -> spriteToDraw = this.playerUp;
+                case DOWN -> spriteToDraw = this.playerDown;
+                case LEFT -> spriteToDraw = this.playerLeft;
+                case RIGHT -> spriteToDraw = this.playerRight;
+            }
+        } else {
+            spriteToDraw = this.playerFishing;
         }
 
         // Disegniamo l'immagine selezionata

@@ -39,6 +39,7 @@ public class App extends Application {
                 case S -> engine.handleMovementRequest(Direction.DOWN);
                 case A -> engine.handleMovementRequest(Direction.LEFT);
                 case D -> engine.handleMovementRequest(Direction.RIGHT);
+                case ENTER -> engine.handleFishingRequest();
                 default -> {}
             }
         });
