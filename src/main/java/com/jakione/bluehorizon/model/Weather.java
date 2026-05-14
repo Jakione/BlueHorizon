@@ -8,10 +8,10 @@ import java.util.Random;
  * sull'attività generale dei pesci e sulla difficoltà di pesca.
  */
 public enum Weather {
-    SUNNY("Soleggiato", 1.0, 50),    // Molto comune
-    CLOUDY("Nuvoloso", 1.1, 25),    // Comune
-    RAINY("Pioggia", 1.25, 20),     // Raro
-    STORMY("Tempesta", 0.7, 5);     // Molto raro
+    SUNNY("Soleggiato", 1.0, 50),
+    CLOUDY("Nuvoloso", 1.1, 25),
+    RAINY("Pioggia", 1.25, 20),
+    STORMY("Tempesta", 0.7, 5);
 
     private final String description;
     private final double baseCatchModifier;

@@ -1,4 +1,4 @@
-package com.jakione.bluehorizon.model;
+package com.jakione.bluehorizon.model.fish;
 
 /**
  * Classe base che racchiude lo stato e il comportamento comune a tutti i pesci.

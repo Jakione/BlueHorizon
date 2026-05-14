@@ -1,4 +1,4 @@
-package com.jakione.bluehorizon.model;
+package com.jakione.bluehorizon.model.fish;
 
 /**
  * Implementazione concreta standard di un pesce.

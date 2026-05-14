@@ -2,9 +2,9 @@ package com.jakione.bluehorizon.controller;
 
 
 import com.jakione.bluehorizon.model.*;
+import com.jakione.bluehorizon.model.player.Direction;
 
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class GameEngine implements Runnable {
 
     // Nelle fasi avanzate, useremo un delta-time per un loop più preciso
     private final int targetFPS = 60;
-    private static final long WEATHER_CYCLE_MS = 30000; // Il meteo cambia ogni 30 secondi (per test)
+    private static final long WEATHER_CYCLE_MS = 3000; // Il meteo cambia ogni 30 secondi (per test)
     private long lastWeatherChange = System.currentTimeMillis();
     private long lastTimeCheck = 0;
 

@@ -1,4 +1,4 @@
-package com.jakione.bluehorizon.model;
+package com.jakione.bluehorizon.model.fish;
 
 /**
  * Contratto base per tutte le entità pescabili all'interno del gioco.

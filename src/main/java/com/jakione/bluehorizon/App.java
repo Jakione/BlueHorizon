@@ -1,14 +1,13 @@
 package com.jakione.bluehorizon;
 
 import com.jakione.bluehorizon.controller.GameEngine;
-import com.jakione.bluehorizon.model.Direction;
+import com.jakione.bluehorizon.model.player.Direction;
 import com.jakione.bluehorizon.model.GameModel;
 import com.jakione.bluehorizon.view.GameRenderer;
 
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
 public class App extends Application {

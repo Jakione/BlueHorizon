@@ -1,6 +1,8 @@
 package com.jakione.bluehorizon.view;
 
 import com.jakione.bluehorizon.model.*;
+import com.jakione.bluehorizon.model.player.Direction;
+import com.jakione.bluehorizon.model.player.Player;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -16,7 +18,7 @@ import java.util.Map;
 public class GameRenderer extends Canvas implements GameObserver {
 
     private final int originalTileSize = 16;
-    private final int scale = 3;
+    private final int scale = 4;
     private final int tileSize = originalTileSize * scale;
 
     private final GameModel model;

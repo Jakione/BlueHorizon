@@ -1,5 +1,7 @@
 package com.jakione.bluehorizon.model;
 
+import com.jakione.bluehorizon.model.player.Direction;
+import com.jakione.bluehorizon.model.player.Player;
 import com.jakione.bluehorizon.persistence.MapReader;
 
 /**

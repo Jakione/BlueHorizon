@@ -1,4 +1,4 @@
-package com.jakione.bluehorizon.model;
+package com.jakione.bluehorizon.model.player;
 
 /**
  * Rappresenta l'entità del giocatore.
