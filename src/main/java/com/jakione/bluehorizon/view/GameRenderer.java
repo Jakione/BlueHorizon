@@ -1,5 +1,6 @@
 package com.jakione.bluehorizon.view;
 
+import com.jakione.bluehorizon.Props;
 import com.jakione.bluehorizon.model.*;
 import com.jakione.bluehorizon.model.player.Direction;
 import com.jakione.bluehorizon.model.player.Player;
@@ -12,8 +13,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 
 public class GameRenderer extends Canvas implements GameObserver {
 
@@ -36,12 +36,26 @@ public class GameRenderer extends Canvas implements GameObserver {
     private Image playerLeft;
     private Image playerRight;
     private Image playerFishing;
+    private Image palmTexture1;
+    private Image palmTexture2;
 
     private enum CoastShape {
         NORTH, SOUTH, EAST, WEST,
         NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, // Angoli esterni (CornersW)
         INNER_NORTHEAST, INNER_NORTHWEST, INNER_SOUTHEAST, INNER_SOUTHWEST, // Nuovi angoli interni (CornersS)
         DEFAULT
+    }
+
+    /**
+     * Record interno per gestire l'Y-Sorting delle entità.
+     */
+    private record RenderableEntity(Image sprite, double drawX, double drawY, double worldY) implements Comparable<RenderableEntity> {
+        @Override
+        public int compareTo(RenderableEntity other) {
+            // Ordina in modo crescente in base alla coordinata Y nel mondo (worldY).
+            // Chi ha una Y minore (sta più in alto nello schermo) viene disegnato prima.
+            return Double.compare(this.worldY, other.worldY);
+        }
     }
 
     // Mappa che collega ogni forma a un array di frame animati (es. indice 0 = frame 1, indice 1 = frame 2)
@@ -128,7 +142,6 @@ public class GameRenderer extends Canvas implements GameObserver {
 
     private void loadAssets() {
         try {
-            // 1. Carichiamo gli asset originali (piccoli) in variabili locali
             Image originalWater1 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile1.png"));
             Image originalWater2 = new Image(getClass().getResourceAsStream("/Tile/Water/watertile2.png"));
             Image originalRock1 = new Image(getClass().getResourceAsStream("/Tile/Rock/rock1.png"));
@@ -139,6 +152,8 @@ public class GameRenderer extends Canvas implements GameObserver {
             Image rawPlayerLeft = new Image(getClass().getResourceAsStream("/Player/P2left.png"));
             Image rawPlayerFishing = new Image(getClass().getResourceAsStream("/Player/P2_fishing_rod.png"));
             Image originalSand = new Image(getClass().getResourceAsStream("/Tile/Sand/sand.png"));
+            Image originalPalm1 = new Image(getClass().getResourceAsStream("/Props/palm1.png"));
+            Image originalPalm2 = new Image(getClass().getResourceAsStream("/Props/palm2.png"));
 
             loadSandWaterAsset(CoastShape.NORTH,  "/Tile/Sand_Water/Sand_Water_North/");
             loadSandWaterAsset(CoastShape.SOUTH, "/Tile/Sand_Water/Sand_Water_South/");
@@ -173,6 +188,9 @@ public class GameRenderer extends Canvas implements GameObserver {
             this.playerRight = scalePixelArt(rawPlayerRight, scale);
             this.playerLeft = scalePixelArt(rawPlayerLeft, scale);
             this.playerFishing = scalePixelArt(rawPlayerFishing, scale);
+
+            this.palmTexture1 = scalePixelArt(originalPalm1, scale);
+            this.palmTexture2 = scalePixelArt(originalPalm2, scale);
 
         } catch (Exception e) {
             System.err.println("Attenzione: Impossibile caricare qualche risorsa.");
@@ -355,30 +373,8 @@ public class GameRenderer extends Canvas implements GameObserver {
             }
         }
 
-        // --- 5. RENDER DEL GIOCATORE ---
-
-        // Il giocatore viene disegnato esattamente con la stessa formula della mappa!
-        // Posizione nel mondo del giocatore - Posizione Telecamera
-        double playerDrawX = playerWorldX - cameraX;
-        double playerDrawY = playerWorldY - cameraY;
-        // Recuperiamo la direzione attuale dal Modello
-        Direction currentDir = player.getCurrentDirection();
-        Image spriteToDraw = playerDown; // Sprite di default per sicurezza
-
-        // Selezioniamo l'immagine corretta in base alla direzione
-        if(!model.getPlayer().isFishing()) {
-            switch (currentDir) {
-                case UP -> spriteToDraw = this.playerUp;
-                case DOWN -> spriteToDraw = this.playerDown;
-                case LEFT -> spriteToDraw = this.playerLeft;
-                case RIGHT -> spriteToDraw = this.playerRight;
-            }
-        } else {
-            spriteToDraw = this.playerFishing;
-        }
-
-        // Disegniamo l'immagine selezionata
-        gc.drawImage(spriteToDraw, playerDrawX, playerDrawY);
+        // --- 5. RENDER DELLE ENTITÀ (Y-SORTED) ---
+        renderYAlignedEntities(gc, cameraX, cameraY);
 
         // --- 6. RENDER DEL METEO (NUOVO) ---
         // Assumendo che il Model esponga il meteo attuale. Adatta il getter se ha un nome diverso.
@@ -447,6 +443,65 @@ public class GameRenderer extends Canvas implements GameObserver {
             // Un blu scuro con alpha al 55% per oscurare la scena senza nasconderla del tutto
             gc.setFill(Color.rgb(5, 10, 30, 0.55));
             gc.fillRect(0, 0, screenWidth, screenHeight);
+        }
+    }
+
+    private void renderYAlignedEntities(GraphicsContext gc, double cameraX, double cameraY) {
+        List<RenderableEntity> renderQueue = new ArrayList<>();
+
+        // 1. Aggiungiamo i Props alla coda di rendering
+        for (int col = 0; col < model.getMaxColumns(); col++) {
+            for (int row = 0; row < model.getMaxRows(); row++) {
+
+                Props currentProp = model.getPropAt(col, row);
+
+                if (currentProp == Props.PALM) {
+                    double palmWorldX = col * tileSize;
+                    double palmWorldY = row * tileSize;
+                    double drawX = palmWorldX - cameraX;
+                    double drawY = palmWorldY - cameraY - tileSize;
+
+                    // --- INIZIO NUOVA LOGICA ---
+                    // Generiamo un numero pseudo-casuale stabile basato sulle coordinate usando numeri primi.
+                    // Moltiplicare per 73 e 31 (numeri primi) evita che caselle adiacenti abbiano pattern troppo ripetitivi.
+                    int hash = (col * 73 + row * 31);
+
+                    // Usiamo il modulo 2 per decidere: pari = texture 1, dispari = texture 2
+                    Image selectedPalm = (hash % 2 == 0) ? palmTexture1 : palmTexture2;
+                    // --- FINE NUOVA LOGICA ---
+
+                    // Aggiungiamo alla coda l'immagine selezionata (se è stata caricata correttamente)
+                    if (selectedPalm != null) {
+                        renderQueue.add(new RenderableEntity(selectedPalm, drawX, drawY, palmWorldY));
+                    }
+                }
+            }
+        }
+
+        // 2. Aggiungiamo il Giocatore alla coda di rendering
+        Player player = model.getPlayer();
+        double playerWorldX = player.getCol() * tileSize;
+        double playerWorldY = player.getRow() * tileSize;
+        double playerDrawX = playerWorldX - cameraX;
+        double playerDrawY = playerWorldY - cameraY;
+
+        Image playerSprite = model.getPlayer().isFishing() ? this.playerFishing :
+                switch (player.getCurrentDirection()) {
+                    case UP -> this.playerUp;
+                    case DOWN -> this.playerDown;
+                    case LEFT -> this.playerLeft;
+                    case RIGHT -> this.playerRight;
+                };
+
+        // La profondità del giocatore è la sua coordinata Y nel mondo
+        renderQueue.add(new RenderableEntity(playerSprite, playerDrawX, playerDrawY, playerWorldY));
+
+        // 3. Ordiniamo la coda (Y-Sorting)
+        Collections.sort(renderQueue);
+
+        // 4. Disegniamo tutto nell'ordine corretto
+        for (RenderableEntity entity : renderQueue) {
+            gc.drawImage(entity.sprite(), entity.drawX(), entity.drawY());
         }
     }
 

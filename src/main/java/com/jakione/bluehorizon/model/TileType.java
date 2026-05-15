@@ -31,7 +31,6 @@ public enum TileType {
                 return type;
             }
         }
-        // Fallback di sicurezza per evitare NullPointerException
         return WATER;
     }
 }
