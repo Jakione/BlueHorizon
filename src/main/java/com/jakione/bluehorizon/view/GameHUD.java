@@ -9,69 +9,115 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 /**
  * Gestisce l'interfaccia utente (HUD) in sovrimpressione al gioco.
- * Mantiene la logica della GUI separata dal rendering del mondo (GameRenderer).
+ * Mantiene la logica della GUI separata dal rendering del mondo.
  */
 public class GameHUD extends BorderPane implements GameObserver {
 
     private final GameModel model;
+
+    // Elementi dinamici della UI
     private Label timeLabel;
     private Label weatherLabel;
+    private Label bottomModifierLabel;
+    private Label caughtLabel; // Predisposizione per l'inventario
+
+    // Caching dello stato per ottimizzare i rendering
     private Weather lastWeather;
     private TimeOfDay lastTimeOfDay;
+
+    // Palette Colori (Nero all'85% di opacità, senza bordi)
+    private final String BG_COLOR = "rgba(0, 0, 0, 1)";
+    private final String TEXT_MUTED = "#a0aabf";
+    private final String TEXT_HIGHLIGHT = "#ffffff";
+    private final String PILL_BG = "rgba(255, 255, 255, 0.15)";
 
     public GameHUD(GameModel model) {
         this.model = model;
 
-        // Rendiamo il BorderPane stesso trasparente per far vedere il Canvas sotto
+        // L'HUD generale è trasparente (lascia vedere il gioco in mezzo)
         this.setStyle("-fx-background-color: transparent;");
-
-        // Impediamo che l'HUD blocchi i click del mouse diretti al Canvas
         this.setPickOnBounds(false);
 
         buildTopBar();
         buildBottomBar();
 
-        // Aggiornamento iniziale
         updateUI();
     }
 
     private void buildTopBar() {
-        HBox topBar = new HBox(20); // Spazio di 20px tra gli elementi
-        topBar.setAlignment(Pos.CENTER);
+        HBox topBar = new HBox();
+        topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(10, 20, 10, 20));
 
-        // Stile CSS integrato per la barra: nero con il 60% di opacità (pseudo-trasparente) e testo bianco
-        topBar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+        // Sfondo nero semitrasparente, nessun bordo
+        topBar.setStyle("-fx-background-color: " + BG_COLOR + ";");
 
-        timeLabel = new Label("Ora: --");
-        timeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+        // --- SINISTRA: Titolo ---
+        Label titleLabel = new Label("🎣 BLUE HORIZON");
+        titleLabel.setStyle("-fx-text-fill: #92a8d1; -fx-font-size: 18px; -fx-font-weight: bold; -fx-letter-spacing: 2px;");
 
-        weatherLabel = new Label("Meteo: --");
-        weatherLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+        // Spaziatore elastico 1
+        Region spacer1 = new Region();
+        HBox.setHgrow(spacer1, Priority.ALWAYS);
 
-        topBar.getChildren().addAll(timeLabel, weatherLabel);
+        // --- CENTRO: Pillola Meteo ---
+        weatherLabel = new Label("☁ --");
+        // Stile "a pillola" con bordi arrotondati, rimosso il bordo solido
+        weatherLabel.setStyle("-fx-background-color: " + PILL_BG + ";" +
+                "-fx-text-fill: " + TEXT_HIGHLIGHT + ";" +
+                "-fx-padding: 5 20 5 20;" +
+                "-fx-background-radius: 15;" +
+                "-fx-font-size: 14px;");
 
-        // Posizioniamo la barra in alto nel BorderPane
+        // Spaziatore elastico 2
+        Region spacer2 = new Region();
+        HBox.setHgrow(spacer2, Priority.ALWAYS);
+
+        // --- DESTRA: Statistiche e Tempo ---
+        HBox rightStats = new HBox(15);
+        rightStats.setAlignment(Pos.CENTER_RIGHT);
+
+        caughtLabel = new Label("Pescati: 0");
+        caughtLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 13px;");
+
+        timeLabel = new Label("⏱ --:--");
+        timeLabel.setStyle("-fx-text-fill: " + TEXT_HIGHLIGHT + "; -fx-font-size: 15px; -fx-font-weight: bold;");
+
+        rightStats.getChildren().addAll(caughtLabel, timeLabel);
+
+        // Assembliamo la barra superiore
+        topBar.getChildren().addAll(titleLabel, spacer1, weatherLabel, spacer2, rightStats);
         this.setTop(topBar);
     }
 
     private void buildBottomBar() {
         HBox bottomBar = new HBox();
         bottomBar.setAlignment(Pos.CENTER_LEFT);
-        bottomBar.setPadding(new Insets(15, 20, 15, 20));
+        bottomBar.setPadding(new Insets(8, 20, 8, 20));
 
-        // Stessa pseudo-trasparenza per l'inventario
-        bottomBar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+        // Sfondo nero semitrasparente, nessun bordo
+        bottomBar.setStyle("-fx-background-color: " + BG_COLOR + ";");
 
-        Label inventoryPlaceholder = new Label("Inventory (Empty)");
-        inventoryPlaceholder.setStyle("-fx-text-fill: lightgray; -fx-font-size: 14px; -fx-font-style: italic;");
+        // --- SINISTRA: Info Canna (Placeholder) ---
+        Label toolLabel = new Label("🎣 Canna selezionata: Canna Leggera");
+        toolLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 12px;");
 
-        bottomBar.getChildren().add(inventoryPlaceholder);
+        // Spaziatore elastico
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Posizioniamo la barra in basso nel BorderPane
+        // --- DESTRA: Modificatore Meteo ---
+        bottomModifierLabel = new Label();
+        bottomModifierLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 12px;");
+
+        bottomBar.getChildren().addAll(toolLabel, spacer, bottomModifierLabel);
         this.setBottom(bottomBar);
     }
 
@@ -79,21 +125,57 @@ public class GameHUD extends BorderPane implements GameObserver {
      * Aggiorna i testi leggendo lo stato attuale dal Model.
      */
     private void updateUI() {
+        // Uso di Simboli Unicode Base per evitare i quadratini di JavaFX
         if (model.getTimeOfDay() != null) {
-            timeLabel.setText("TimeOfDay: " + model.getTimeOfDay().getDescription());
+            String icon = (model.getTimeOfDay() == TimeOfDay.DAY) ? "☀ " : "☾ ";
+            timeLabel.setText(icon + model.getTimeOfDay().getDescription());
         }
+
+        // Aggiornamento Meteo
         if (model.getCurrentWeather() != null) {
-            weatherLabel.setText("Weather: " + model.getCurrentWeather().getDescription());
+            Weather w = model.getCurrentWeather();
+
+            // Simboli Unicode Base (senza Variation Selectors)
+            String weatherIcon = switch (w) {
+                case SUNNY -> "☀ ";
+                case CLOUDY -> "☁ ";
+                case RAINY -> "☂ ";
+                case STORMY -> "☈ ";
+            };
+            weatherLabel.setText(weatherIcon + w.getDescription());
+
+            // Calcolo dinamico del modificatore percentuale
+            double mod = w.getBaseCatchModifier();
+            int percentage = (int) Math.round((mod - 1.0) * 100);
+
+            String sign = (percentage >= 0) ? "+" : "";
+            String colorCSS = (percentage >= 0) ? "#4caf50" : "#f44336";
+
+            bottomModifierLabel.setGraphic(buildColoredModifierText("Meteo: ", sign + percentage + "%", " probabilità", colorCSS));
+            bottomModifierLabel.setText("");
         }
+    }
+
+    /**
+     * Helper per creare un testo con parti colorate in modo diverso all'interno della stessa Label.
+     */
+    private TextFlow buildColoredModifierText(String prefix, String coloredValue, String suffix, String colorCSS) {
+        Text t1 = new Text(prefix);
+        t1.setStyle("-fx-fill: " + TEXT_MUTED + ";");
+
+        Text t2 = new Text(coloredValue);
+        t2.setStyle("-fx-fill: " + colorCSS + "; -fx-font-weight: bold;");
+
+        Text t3 = new Text(suffix);
+        t3.setStyle("-fx-fill: " + TEXT_MUTED + ";");
+
+        return new TextFlow(t1, t2, t3);
     }
 
     @Override
     public void onGameStateUpdated() {
-        // Leggiamo lo stato attuale
         Weather currentWeather = model.getCurrentWeather();
         TimeOfDay currentTimeOfDay = model.getTimeOfDay();
-
-        // Verifichiamo se ci sono stati dei cambiamenti rispetto all'ultimo frame
         boolean hasChanged = false;
 
         if (currentWeather != lastWeather) {
@@ -106,7 +188,6 @@ public class GameHUD extends BorderPane implements GameObserver {
             hasChanged = true;
         }
 
-        // Deleghiamo l'aggiornamento alla UI di JavaFX SOLO se necessario
         if (hasChanged) {
             javafx.application.Platform.runLater(this::updateUI);
         }

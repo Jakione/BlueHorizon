@@ -4,7 +4,7 @@ import java.time.LocalTime;
 
 public enum TimeOfDay {
     DAY("Giorno", 1.0),
-    NIGHT("Notte", 1.00);
+    NIGHT("Notte", 1.0);
 
     private final String description;
     private final double modifier;

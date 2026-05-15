@@ -1,8 +1,7 @@
 package com.jakione.bluehorizon.view;
 
-import com.jakione.bluehorizon.Props;
+import com.jakione.bluehorizon.model.Props;
 import com.jakione.bluehorizon.model.*;
-import com.jakione.bluehorizon.model.player.Direction;
 import com.jakione.bluehorizon.model.player.Player;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;

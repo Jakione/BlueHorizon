@@ -1,4 +1,4 @@
-package com.jakione.bluehorizon;
+package com.jakione.bluehorizon.model;
 
 public enum Props {
     NONE(0),   // Nessun oggetto in questa cella
