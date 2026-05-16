@@ -13,6 +13,6 @@ public class BasicRod implements FishingGear {
 
     @Override
     public List<FishSpecies> getTargetableSpecies() {
-        return Arrays.asList(FishSpecies.CARP, FishSpecies.SALMON);
+        return Arrays.asList(FishSpecies.ECLISSI_DI_CORALLO, FishSpecies.GUARDIANO_DEL_LEVIATANO, FishSpecies.RE_DI_GHIACCIO);
     }
 }

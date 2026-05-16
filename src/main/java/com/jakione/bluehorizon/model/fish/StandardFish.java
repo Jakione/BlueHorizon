@@ -9,12 +9,9 @@ package com.jakione.bluehorizon.model.fish;
  */
 public class StandardFish extends AbstractFish {
 
-    public StandardFish(String name, double weight, double length) {
-        super(name, weight, length);
+    // <-- AGGIUNTO: Riceviamo FishSpecies nel costruttore
+    public StandardFish(FishSpecies species, String name, double weight, double length) {
+        super(species, name, weight, length); // Passiamo la specie alla classe base
     }
 
-    // Essendo un pesce "standard", non ha comportamenti aggiuntivi.
-    // In futuro, se introdurrai meccaniche speciali (es. un pesce che si dimena e
-    // ha un metodo tryEscape()), potrai creare una nuova classe concreta
-    // come 'FighterFish extends AbstractFish'.
 }

@@ -11,4 +11,6 @@ public interface Fish {
     double getWeight();
 
     double getLength();
+
+    FishSpecies getFishSpecies();
 }

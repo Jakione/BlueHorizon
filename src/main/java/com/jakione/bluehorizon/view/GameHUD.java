@@ -13,6 +13,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 
 /**
  * Gestisce l'interfaccia utente (HUD) in sovrimpressione al gioco.
@@ -52,7 +54,7 @@ public class GameHUD extends BorderPane implements GameObserver {
     }
 
     private void buildTopBar() {
-        HBox topBar = new HBox();
+        HBox topBar = new HBox(15);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(10, 20, 10, 20));
 
@@ -63,13 +65,34 @@ public class GameHUD extends BorderPane implements GameObserver {
         Label titleLabel = new Label("🎣 BLUE HORIZON");
         titleLabel.setStyle("-fx-text-fill: #92a8d1; -fx-font-size: 18px; -fx-font-weight: bold; -fx-letter-spacing: 2px;");
 
+        // --- MENU A TENDINA ---
+        MenuButton menuButton = new MenuButton();
+        menuButton.setFocusTraversable(false);
+        menuButton.setStyle("-fx-background-color: " + PILL_BG + ";" +
+                "-fx-background-radius: 5;");
+
+        // Creiamo una Label dedicata per aggirare il blocco del colore di JavaFX
+        Label menuLabel = new Label("☰ Menu");
+        menuLabel.setStyle("-fx-text-fill: " + TEXT_HIGHLIGHT + "; -fx-font-weight: bold;");
+        menuButton.setGraphic(menuLabel); // Impostiamo la label come contenuto del bottone
+
+        MenuItem inventoryItem = new MenuItem("🎒 Inventario");
+        MenuItem registryItem = new MenuItem("📖 Registro Catture");
+        MenuItem saveItem = new MenuItem("💾 Salva Partita");
+
+        // Gestione degli eventi del menu (da collegare poi al Controller/Model)
+        inventoryItem.setOnAction(e -> openInventoryView());
+        registryItem.setOnAction(e -> openRegistryView());
+        saveItem.setOnAction(e -> triggerSaveGame());
+
+        menuButton.getItems().addAll(inventoryItem, registryItem, saveItem);
+
         // Spaziatore elastico 1
         Region spacer1 = new Region();
         HBox.setHgrow(spacer1, Priority.ALWAYS);
 
         // --- CENTRO: Pillola Meteo ---
         weatherLabel = new Label("☁ --");
-        // Stile "a pillola" con bordi arrotondati, rimosso il bordo solido
         weatherLabel.setStyle("-fx-background-color: " + PILL_BG + ";" +
                 "-fx-text-fill: " + TEXT_HIGHLIGHT + ";" +
                 "-fx-padding: 5 20 5 20;" +
@@ -92,9 +115,24 @@ public class GameHUD extends BorderPane implements GameObserver {
 
         rightStats.getChildren().addAll(caughtLabel, timeLabel);
 
-        // Assembliamo la barra superiore
-        topBar.getChildren().addAll(titleLabel, spacer1, weatherLabel, spacer2, rightStats);
+        // Assembliamo la barra superiore includendo il menu
+        topBar.getChildren().addAll(titleLabel, menuButton, spacer1, weatherLabel, spacer2, rightStats);
         this.setTop(topBar);
+    }
+
+    private void openInventoryView() {
+        // Estraiamo l'inventario in sola lettura dal Player tramite il Model
+        // e lo passiamo alla nuova finestra grafica
+        InventoryView.show(model.getPlayer().getInventory());
+    }
+
+    private void openRegistryView() {
+        // Mostriamo la finestra del registro passandogli i dati di dominio
+        RegistryView.show(model.getPlayer().getCatchRegistry());
+    }
+
+    private void triggerSaveGame() {
+        System.out.println("Richiesta di salvataggio inoltrata...");
     }
 
     private void buildBottomBar() {

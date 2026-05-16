@@ -6,6 +6,7 @@ package com.jakione.bluehorizon.model.fish;
  */
 public abstract class AbstractFish implements Fish {
 
+    protected final FishSpecies species; // <-- NUOVO: Riferimento alla specie (Enum)
     protected final String name;
     protected final double weight;
     protected final double length;
@@ -13,7 +14,8 @@ public abstract class AbstractFish implements Fish {
     /**
      * Costruttore protetto, invocabile solo dalle classi figlie.
      */
-    protected AbstractFish(String name, double weight, double length) {
+    protected AbstractFish(FishSpecies species, String name, double weight, double length) {
+        this.species = species; // <-- Salviamo la specie
         this.name = name;
         this.weight = weight;
         this.length = length;
@@ -32,5 +34,10 @@ public abstract class AbstractFish implements Fish {
     @Override
     public double getLength() {
         return this.length;
+    }
+
+    @Override
+    public FishSpecies getFishSpecies() {
+        return this.species; // <-- RISOLTO: Ora restituisce l'enum corretta e non più null!
     }
 }

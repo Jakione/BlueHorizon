@@ -1,32 +1,45 @@
 package com.jakione.bluehorizon.model.player;
 
+import com.jakione.bluehorizon.model.fish.CatchRegistry;
 import com.jakione.bluehorizon.model.fishing.BasicRod;
 import com.jakione.bluehorizon.model.fishing.FishingGear;
+import com.jakione.bluehorizon.model.inventory.Inventory;
+import com.jakione.bluehorizon.model.inventory.RodType;
 
-/**
- * Rappresenta l'entità del giocatore.
- * Utilizza coordinate intere per identificare la posizione sulla griglia logica.
- */
 public class Player {
 
     private int col;
     private int row;
     private int animationFrame = 0;
     private Direction currentDirection = Direction.DOWN;
+    private final CatchRegistry catchRegistry = new CatchRegistry();
+
     private FishingGear equippedGear;
     private boolean isFishing = false;
 
+    private final Inventory inventory;
 
     public Player(int startCol, int startRow) {
         this.col = startCol;
         this.row = startRow;
-        this.equippedGear = new BasicRod();
+        this.inventory = new Inventory();
+
+        equipRod(RodType.BASIC);
     }
 
     /**
-     * Modifica la posizione logica sulla griglia.
-     * La validazione dei confini viene gestita dal GameModel.
+     * Equipaggia una canna solo se presente nell'inventario.
+     * Istanzia il polimorfismo corretto di FishingGear.
      */
+    public void equipRod(RodType rodType) {
+        if (inventory.hasRod(rodType)) {
+            switch (rodType) {
+                case BASIC -> this.equippedGear = new BasicRod();
+                // Qui in futuro aggiungerai: case ADVANCED -> this.equippedGear = new AdvancedRod();
+            }
+        }
+    }
+
     public void updatePosition(Direction direction) {
         this.currentDirection = direction;
         switch (direction) {
@@ -45,4 +58,9 @@ public class Player {
     public FishingGear getEquippedGear() { return equippedGear; }
     public boolean isFishing() { return isFishing; }
     public void setFishing(boolean fishing) { isFishing = fishing; }
+
+    public CatchRegistry getCatchRegistry() {
+        return catchRegistry;
+    }
+    public Inventory getInventory() { return inventory; }
 }

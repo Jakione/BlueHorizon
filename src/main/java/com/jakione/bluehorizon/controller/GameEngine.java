@@ -1,12 +1,10 @@
 package com.jakione.bluehorizon.controller;
 
-
 import com.jakione.bluehorizon.model.*;
 import com.jakione.bluehorizon.model.fish.Fish;
 import com.jakione.bluehorizon.model.fishing.FishingManager;
 import com.jakione.bluehorizon.model.player.Direction;
 import com.jakione.bluehorizon.model.player.Player;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +27,6 @@ public class GameEngine implements Runnable {
 
     private static final long MOVE_COOLDOWN_MS = 150; // 250ms di pausa tra una casella e l'altra
     private long lastMoveTime = 0;
-
 
     // Nelle fasi avanzate, useremo un delta-time per un loop più preciso
     private final int targetFPS = 60;
@@ -110,14 +107,19 @@ public class GameEngine implements Runnable {
 
         Optional<Fish> catchResult = fishingManager.attemptCatch(player.getEquippedGear(), currentWeather);
 
-        catchResult.ifPresentOrElse(
-                fish -> System.out.println("CATTURA! Hai pescato: " + fish.getName() + " (" + fish.getWeight() + " kg)"),
-                () -> System.out.println("...Niente. L'esca è intatta.")
-        );
+        // --- MODIFICA: Inserimento del pesce pescato nel registro ---
+        if (catchResult.isPresent()) {
+            Fish fish = catchResult.get();
+            System.out.println("CATTURA! Hai pescato: " + fish.getName() + " (" + fish.getWeight() + " kg)");
+
+            // Salviamo la specie e il peso (che funge da record dimensionale) nel registro del giocatore
+            player.getCatchRegistry().addCatch(fish.getFishSpecies(), fish.getWeight(), fish.getLength());
+        } else {
+            System.out.println("...Niente. L'esca è intatta.");
+        }
 
         notifyObservers();
     }
-
 
     /**
      * Registra un nuovo observer (tipicamente la View JavaFX).
@@ -162,7 +164,6 @@ public class GameEngine implements Runnable {
             }
         }
     }
-
 
     /**
      * Segnala a tutte le viste in ascolto che i dati sono mutati.
