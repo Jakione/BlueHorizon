@@ -23,6 +23,7 @@ import javafx.scene.control.MenuItem;
 public class GameHUD extends BorderPane implements GameObserver {
 
     private final GameModel model;
+    private boolean fishingResultActive = false;
 
     // Elementi dinamici della UI
     private Label timeLabel;
@@ -121,18 +122,32 @@ public class GameHUD extends BorderPane implements GameObserver {
     }
 
     private void openInventoryView() {
-        // Estraiamo l'inventario in sola lettura dal Player tramite il Model
-        // e lo passiamo alla nuova finestra grafica
-        InventoryView.show(model.getPlayer().getInventory());
+        // Costruiamo il nodo passando l'inventario e la lambda per la chiusura
+        javafx.scene.Node inventoryNode = InventoryView.build(
+                model.getPlayer().getInventory(),
+                () -> this.setCenter(null) // Callback: svuota il centro alla chiusura
+        );
+
+        // Posizioniamo l'inventario al centro dell'HUD
+        this.setCenter(inventoryNode);
     }
 
     private void openRegistryView() {
-        // Mostriamo la finestra del registro passandogli i dati di dominio
-        RegistryView.show(model.getPlayer().getCatchRegistry());
+        // Costruiamo il nodo del compendio
+        javafx.scene.Node registryNode = RegistryView.build(
+                model.getPlayer().getCatchRegistry(),
+                () -> this.setCenter(null)
+        );
+
+        // Posizioniamo il compendio al centro dell'HUD
+        this.setCenter(registryNode);
     }
 
     private void triggerSaveGame() {
         System.out.println("Richiesta di salvataggio inoltrata...");
+        // Istanziamo il DAO ed eseguiamo l'operazione sul modello
+        com.jakione.bluehorizon.persistence.GameDAO dao = new com.jakione.bluehorizon.persistence.SQLiteGameDAO();
+        dao.saveGame(model);
     }
 
     private void buildBottomBar() {
@@ -229,5 +244,48 @@ public class GameHUD extends BorderPane implements GameObserver {
         if (hasChanged) {
             javafx.application.Platform.runLater(this::updateUI);
         }
+    }
+
+    /**
+     * Verifica se vi è un overlay di menu attualmente visualizzato al centro dell'HUD.
+     * @return true se un menu è aperto, false altrimenti.
+     */
+    public boolean isOverlayActive() {
+        return this.getCenter() != null;
+    }
+
+    public void showFishingSuccess(String fishName, double weight, double length) {
+        javafx.application.Platform.runLater(() -> {
+            this.fishingResultActive = true; // Segnaliamo che è aperta la notifica
+            javafx.scene.layout.VBox resultNode = FishingResultView.build(
+                    true, fishName, weight, length, this::closeCurrentOverlay
+            );
+            this.setCenter(resultNode);
+        });
+    }
+
+    public void showFishingFailure() {
+        javafx.application.Platform.runLater(() -> {
+            this.fishingResultActive = true; // Segnaliamo che è aperta la notifica
+            javafx.scene.layout.VBox resultNode = FishingResultView.build(
+                    false, null, 0, 0, this::closeCurrentOverlay
+            );
+            this.setCenter(resultNode);
+        });
+    }
+
+    /**
+     * Verifica se l'overlay attualmente aperto è la notifica di pesca.
+     */
+    public boolean isFishingResultActive() {
+        return fishingResultActive;
+    }
+
+    /**
+     * Metodo centralizzato per chiudere qualsiasi overlay e resettare lo stato.
+     */
+    public void closeCurrentOverlay() {
+        this.setCenter(null);
+        this.fishingResultActive = false;
     }
 }

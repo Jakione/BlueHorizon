@@ -21,13 +21,13 @@ public class Inventory {
     }
 
     public void addRod(RodType type, int amount) {
-        rods.put(type, rods.getOrDefault(type, 0) + 1);
+        // Corretto: ora usa la variabile 'amount' invece di aggiungere sempre 1
+        rods.put(type, rods.getOrDefault(type, 0) + amount);
     }
 
     public void addUsable(UsableItem item, int amount) {
         usables.put(item, usables.getOrDefault(item, 0) + amount);
     }
-
     /**
      * Tenta di consumare un oggetto.
      * @return true se l'oggetto era presente ed è stato consumato, false altrimenti.
@@ -48,4 +48,27 @@ public class Inventory {
     // Esponiamo mappe in SOLA LETTURA per la GUI (nessun rischio di manomissione dalla View)
     public Map<RodType, Integer> getRods() { return Collections.unmodifiableMap(rods); }
     public Map<UsableItem, Integer> getUsables() { return Collections.unmodifiableMap(usables); }
+
+    /**
+     * Svuota l'inventario. Utile per rimuovere gli oggetti di default
+     * prima di caricare un salvataggio.
+     */
+    public void clear() {
+        rods.clear();
+        usables.clear();
+    }
+
+    /**
+     * Imposta direttamente la quantità di una canna (usato dal DAO).
+     */
+    public void setRod(RodType type, int amount) {
+        rods.put(type, amount);
+    }
+
+    /**
+     * Imposta direttamente la quantità di un consumabile (usato dal DAO).
+     */
+    public void setUsable(UsableItem item, int amount) {
+        usables.put(item, amount);
+    }
 }

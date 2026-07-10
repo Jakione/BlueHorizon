@@ -22,5 +22,8 @@ public class CatchRecord {
     public int getTotalCaught() { return totalCaught; }
     public double getMaxWeight() { return maxWeight; }
     public double getRecordLength() { return recordLength; }
+    public void setMaxWeight(double maxWeight) { this.maxWeight = maxWeight; }
+    public void setRecordLength(double recordLength) { this.recordLength = recordLength; }
+    public void setTotalCaught(int totalCaught) { this.totalCaught = totalCaught; }
     public boolean isCaught() { return totalCaught > 0; }
 }
