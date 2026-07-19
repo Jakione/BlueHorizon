@@ -12,8 +12,6 @@
 
 Project developed by Jacques Bozzoli e Jacopo Correggi as a university exam for the **Computer Engineering** at the **University of Modena and Reggio Emilia (UNIMORE)**.
 
----
-
 ## Core Mechanics
 
 * **Stochastic Fishing System**: Catching fish is based on dynamically calculated probabilities. Stats are influenced by multiple factors:
@@ -22,7 +20,6 @@ Project developed by Jacques Bozzoli e Jacopo Correggi as a university exam for 
 * **Data Persistence**: Native Save and Load system implemented with MySQL to securely keep progress, collection, and inventory across different game sessions.
 * **Dynamic Weather & Day/Night Cycle**: Random atmospheric conditions and continuous time progression actively alter the available fauna and the game environment.
 * **Autotiling System**: The map is visually rendered through an automatic tile-matching system.
----
 
 ## Technology Stack
 
@@ -31,7 +28,6 @@ Project developed by Jacques Bozzoli e Jacopo Correggi as a university exam for 
 * **Build Automation**: Maven
 * **Documentation**: Detailed JavaDoc for logic classes and architectural decisions.
 
----
 
 ## Internal Structure
 
