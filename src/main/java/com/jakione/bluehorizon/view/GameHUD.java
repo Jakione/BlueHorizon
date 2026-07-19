@@ -108,13 +108,10 @@ public class GameHUD extends BorderPane implements GameObserver {
         HBox rightStats = new HBox(15);
         rightStats.setAlignment(Pos.CENTER_RIGHT);
 
-        caughtLabel = new Label("Pescati: 0");
-        caughtLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 13px;");
-
         timeLabel = new Label("⏱ --:--");
         timeLabel.setStyle("-fx-text-fill: " + TEXT_HIGHLIGHT + "; -fx-font-size: 15px; -fx-font-weight: bold;");
 
-        rightStats.getChildren().addAll(caughtLabel, timeLabel);
+        rightStats.getChildren().addAll(timeLabel);
 
         // Assembliamo la barra superiore includendo il menu
         topBar.getChildren().addAll(titleLabel, menuButton, spacer1, weatherLabel, spacer2, rightStats);

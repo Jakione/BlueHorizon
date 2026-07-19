@@ -31,7 +31,7 @@ public class GameEngine implements Runnable {
 
     // Nelle fasi avanzate, useremo un delta-time per un loop più preciso
     private final int targetFPS = 60;
-    private static final long WEATHER_CYCLE_MS = 30000; // Il meteo cambia ogni 30 secondi (per test)
+    private static final long WEATHER_CYCLE_MS = 60000; // Il meteo cambia ogni 60 secondi (per test)
     private long lastWeatherChange = System.currentTimeMillis();
     private long lastTimeCheck = 0;
 
